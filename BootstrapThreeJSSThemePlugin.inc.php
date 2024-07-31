@@ -16,43 +16,6 @@
 import('lib.pkp.classes.plugins.ThemePlugin');
 class BootstrapThreeJSSThemePlugin extends ThemePlugin {
 
-        /*
-	 * This was a test for creating dynamic content.
-	 * This can be used in the templates (.tpl)
-	 * by first 'loading' this module/hook (must be registered, see below)
-	 * and then do the following in the .tpl file:
-	 *
-         * {capture assign="retoCode"}{call_hook name="Templates::Common::Reto"}{/capture}
-         * {$retoCode}
-	 *
-	 * The first line captures whatever the hook contains, the second one simply prints
-	 * the content.
-	 *
-         * @param $hookName string
-         * @param $args array [
-         *......@option array Params passed to the hook
-         *......@option Smarty
-         *......@option string The output
-         * ]
-         */
-        public function reto($hookName, $args) {
-            $params =& $args[0];
-            $smarty =& $args[1];
-            $output =& $args[2];
-
-            /////$article = $smarty->getTemplateVars('article');
-
-            $output  = "";
-            $output .= "<div class=\"pkp_block\">\n";
-            $output .= "  <h2 class=\"title\">Just a test</h2>";
-            $output .= "  <div class=\"content\">\n";
-            $output .= "    This content is created by a php function registered via hook ('reto').";
-            $output .= "  </div>\n";
-            $output .= "</div>";
-
-
-            return false;
-        }
 
         /**
          * Extracting issue number from publisher-id.
@@ -93,7 +56,6 @@ class BootstrapThreeJSSThemePlugin extends ThemePlugin {
         	# Required to be able to set variables for the templating engine
         	HookRegistry::register ('TemplateManager::display', array($this, 'loadTemplateData'));
 
-        	HookRegistry::register('Templates::Common::Reto', [$this, 'reto']);
         	HookRegistry::register('Templates::Common::getJSSIssueNumber', [$this, 'get_jss_issue_number']);
 
         	$this->setParent('bootstrapthreethemeplugin');
