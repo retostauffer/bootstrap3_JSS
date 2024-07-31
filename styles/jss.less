@@ -1,0 +1,722 @@
+
+
+@import (inline) "google_font.css";
+
+* { 
+    font-family: 'Barlow', sans-serif;
+    font-weight: 400; // Normal weight
+}
+
+// Change the default color
+@primary: #ff0033;
+
+@gray-base:              #000;
+@gray-darker:            lighten(@gray-base, 13.5%); // #222
+@gray-dark:              lighten(@gray-base, 20%);   // #333
+@gray:                   lighten(@gray-base, 33.5%); // #555
+@gray-light:             lighten(@gray-base, 70.7%); // #777
+@gray-lighter:           lighten(@gray-base, 93.5%); // #eee
+
+@navbar-default-bg: #0088b5;   // JSS blue
+
+
+@brand-primary:         #0088b5; // JSS blue
+//@brand-secondary:       #aee92c; // JSS green (test)
+//@brand-secondary:       #f9b40c; // JSS orange (test)
+@brand-secondary:       #e92c90; // JSS pink (test)
+//@brand-secondary:       #2c94e9; // JSS blue (test)
+@brand-success:         #5cb85c;
+@brand-info:            #5bc0de;
+@brand-warning:         #f0ad4e;
+@brand-danger:          #d9534f;
+
+// In general: remove round edges
+@border-radius-base:  0;
+@border-radius-large: 0;
+@border-radius-small: 0;
+
+// Spacing around images in 'additonal  content'
+.additional_content {
+	img {
+		padding: 0 0 1em 1em;
+	}
+}
+
+a {
+    &:hover {
+        color: @brand-secondary;
+    }
+}
+
+// Remove border from blocks
+.pkp_block {
+
+	margin: 0;
+	padding: 0 0 1.5em 1em;
+	border: none;
+	box-shadow: none;
+	
+	// Content lists
+	.content {
+		padding: 0;
+		
+		ul {
+			li {
+				padding: 0;
+				border: none;
+			}
+		}
+	}
+
+	// Remove color from lists (default)
+	ul {
+		li {
+			background-color: transparent;
+		}
+	}
+
+	// Animation for .title underline when hovering block
+	&:hover {
+		h2 {
+			color: @brand-primary;
+			-webkit-transition: color 300ms linear;
+    			-moz-transition: color 300ms linear;
+    			-o-transition: color 300ms linear;
+    			-ms-transition: color 300ms linear;
+                	transition: color 300ms linear;
+		}
+		.title {
+			&::after {
+				overflow: hidden;
+				opacity: 1;
+				transform: translate3d(0, 0, 0);
+			}
+		}
+	}
+	
+
+	.title {
+		display:             block;
+		position:            relative;
+		padding:             0.2em 0;
+		font-size:           1em;
+		font-weight:         bold;
+		color:               @gray-light;
+		border:              none;
+		background-color:    transparent;
+		margin:              0 0px 10px 0px;
+		overflow: hidden;
+
+		&::after {
+			content: "";
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			width: 100%;
+			height: 2px;
+			background-color: @brand-primary;
+			//background-color: @brand-secondary;
+			opacity: 0;
+			overflow: hidden;
+			transition: opacity 300ms, transform 300ms;
+			transform: translate3d(-100%, 0, 0);
+		}
+	}
+
+	// How-to-cite block in sidebar
+	&.how-to-cite {
+		#citationOutput {
+			margin-bottom: 1em;
+		}
+	}
+}
+// Special block used in 'main content'; overwrites
+// padding from .pkp_block default class.
+.pkp_block_main {
+	padding: 1.5em 0;
+}
+
+.block_web_feed {
+    div.content {
+        padding: 0 15px;
+
+        ul {
+            clear: both;
+            li {
+                float: left;
+                border: none;
+                padding: 0 0.3em 0 0;
+            }
+        }
+    }
+}
+
+
+// ------------------ styling navbar ----------------------
+
+// Navbar default
+@navbar-default-color:               white;
+@navbar-default-link-color:          white;
+@navbar-default-link-hover-color:    black;
+@navbar-default-link-hover-bg:       @brand-secondary;
+
+// Hamburger; navbar toggle
+@navbar-default-toggle-hover-bg:           @brand-secondary;
+@navbar-default-toggle-icon-bar-bg:        white;
+@navbar-default-toggle-border-color:       #ddd;
+
+
+// Align left and right hand side of the page
+.pkp_structure_main, .pkp_structure_sidebar {
+	padding: 1.5em 0;
+	.journal-description {
+		margin-top: 0;
+	}
+}
+
+// Styling figures in main text. These may - or may not - come
+// from the markdown documents we use to feed the database.
+.pkp_structure_main {
+	img {
+		border: 2px solid @gray-light;
+		max-width: 100%;
+		margin: 1.5em 0;
+
+		&:hover {
+			border-color: @brand-secondary;
+		}
+	}
+
+	// When figure has a caption it is inside a div.figure box.
+	// Adjust spacing and style caption text.
+	.figure {
+		&:hover {
+			img {
+				border-color: @brand-secondary;
+			}
+			p {
+				color: @brand-secondary;
+			}
+		}
+
+		img {
+			margin-bottom: 0;
+		}
+
+		p {
+			color: @gray-light;
+			&:before {
+				content: "Caption:"
+			}
+		}
+	}
+
+	// Not for the one image in the 'additional_content'
+	// we use on entry page
+	.additional_content {
+		img {
+			margin: 0;
+			border: 0;
+		}
+	}
+}
+
+.pkp_structure_sidebar {
+	padding-left: 1em;
+	@media (max-width: @screen-sm-max) {
+		padding-left: 0;
+		.pkp_block {
+			padding-left: 0;
+		}
+	}
+}
+
+.sidebar-separator {
+	display: block;
+	height: 0.25em;
+	width: 100%;
+	background-color: @gray-light;
+	margin-bottom: 2em;
+}
+
+#headerNavigationContainer {
+    background-size: cover;
+}
+
+
+.navbar-default {
+
+	margin-bottom: 0;
+
+	#jss-logo {
+	    padding: 0 15px;
+	
+	    a.navbar-brand {
+	        display: block;
+	        width: 80%;
+	        height: 5em;
+	
+	        img {
+	            max-width: 100%;
+	        }
+	
+	        @media (max-width: @screen-sm-max) {
+			width: 70%;
+	        }
+	
+	    }
+	
+	}
+
+	.navbar-nav {
+		.open {
+			a.dropdown-toggle {
+				color: white;
+				background-color: @brand-secondary;
+			}
+		}
+	}
+
+	.navbar-toggle {
+		width: 44px;
+		height: 44px;
+		color: white;
+		a { color: white; }
+	}
+
+
+	.navbar-collapse {
+		padding: 0;
+	}
+
+	.navbar-extra-buttons {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+
+		li {
+			float: left;
+		}
+		a {
+			display: inline-block;
+			padding: 15px;
+			color: white;
+			svg {
+				margin-right: 0.5em;
+			}
+		}
+		&:hover {
+			background-color: @brand-secondary;
+			svg, a {
+				color: black;
+				text-decoration: none;
+			}
+		}
+	}
+
+	.navigationUserXs {
+		display: none;
+	}
+
+        @media (max-width: @screen-xs-max) {
+		#jss-logo {
+			padding: 0;
+			margin: 0;
+			width: 100%;
+
+			.navbar-brand {
+				width: 100% !important;
+				padding: 0 !important;
+				margin: 0 !important;
+				img {
+					width: 100%;
+					height: 100%;
+				}
+			}
+		}
+
+		// Remove margin when navbar-nav is shown in collapsed mode
+		.navbar-nav {
+			margin: 0;
+		}
+	}
+
+}
+
+
+// ---------- editorial team page -------------------------
+// Styling the editorial team site we dynamically create
+.page_editorial_team {
+	img {
+		border: 0;
+		margin: 0;
+	}
+
+	ul {
+		list-style: none;
+		padding: 0;
+
+		li {
+			margin-bottom: 0.25em;
+		}
+	}
+	a {
+		// Extra margin on the left
+		svg {
+			margin-left: 0.3em;
+		}
+		// Colorizing the orcid fontawesome icon
+		.fa-orcid {
+			color: #a4ce4a;
+		}
+	}
+}
+
+// ---------- adjusting registration page -----------------
+.page_register {
+	.registration_content {
+		.row {
+			margin-bottom: 2em;
+			&:first-child {
+				margin-top: 2em;
+			}
+		}
+		svg {
+			color: @brand-primary;
+		}
+	}
+}
+
+// ---------- adjusting breadcrump style ------------------
+.cmp_breadcrumbs {
+    ol.breadcrumb {
+        background-color: transparent;
+        padding-left: 0;
+
+	li.active {
+		color: @brand-secondary;
+	}
+    }
+}
+
+
+.article-details {
+
+	.authors_long {
+		strong {
+			margin-left: 0.5em;
+			&:first-child {
+				margin-left: 0;
+			}
+		}
+
+		a.orcid {
+			margin-left: 0.3em;
+			color: #a4ce4a;
+		}
+	}
+
+	.download {
+		padding: 0 0 1.5em 0;
+		.btn {
+			display: inline-block;
+			text-align: left;
+		}
+	}
+	
+	.article-sidebar {
+		strong {
+			font-size:           1em;
+			font-weight:         bold;
+			color:               @gray-light;
+			border:              none;
+			background-color:    transparent;
+			padding:             0;
+			margin:              0 0 0.5em 0;
+		}
+	}
+	
+	.date-published, .issue, .section, .doi, .keywords {
+		border: none;
+		padding: 0;
+	}
+
+	.list-group {
+		.list-group-item {
+			padding-bottom: 1.5em;
+		}
+	}
+
+	.download-main {
+		padding: 4em 0 0.5em 0;
+	}
+	.download-supplements {
+		padding: 0 0 1.5em 0;
+	}
+
+
+	// Buttons for keywords which forward to the search form
+	form.keyword-search {
+		display: inline-block;
+		padding: 0.25em 0.25em 0 0;
+		button {
+			border-radius: 0.2em;
+			border: none;
+			background-color: @gray-lighter;
+			color: @brand-primary;
+			cursor: pointer;
+
+			&:hover {
+				color: @brand-secondary;
+				text-decoration: underline;
+			}
+		}
+		clear: both;
+	}
+
+	.article-meta {
+		div.row {
+			margin-bottom: 0.5em;
+		}
+
+		strong {
+			color: @gray-light;
+		}
+	}
+
+}
+
+// ---------- styling the toc on the index ----------------
+.current_issue {
+	.published {
+		color: @gray-light;
+		svg {
+			margin: 0 0.5em;
+		}
+	}
+}
+
+.current_issue, .issue-toc {
+	.section {
+		h2 {
+			font-size: 1.5em;
+			color: @gray-light;
+		}
+
+		// Animation for .title underline when hovering block
+		&:hover {
+			h2 {
+				color: @brand-secondary;
+				-webkit-transition: color 300ms linear;
+    				-moz-transition: color 300ms linear;
+    				-o-transition: color 300ms linear;
+    				-ms-transition: color 300ms linear;
+        	        	transition: color 300ms linear;
+			}
+			.page-header {
+				&::after {
+					overflow: hidden;
+					opacity: 1;
+					transform: translate3d(0, 0, 0);
+				}
+			}
+		}
+	
+		.page-header {
+			display:             block;
+			position:            relative;
+			padding:             0.2em 0;
+			font-size:           1em;
+			font-weight:         bold;
+			border:              none;
+			background-color:    transparent;
+			margin:              0 0px 10px 0px;
+			overflow: hidden;
+
+			&::after {
+				content: "";
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				width: 100%;
+				height: 2px;
+				background-color: @brand-secondary;
+				opacity: 0;
+				overflow: hidden;
+				transition: opacity 300ms, transform 300ms;
+				transform: translate3d(-100%, 0, 0);
+			}
+		}
+	}
+}
+
+.article-summary, .article-details {
+	h3 {
+		font-weight: bold;
+	}
+
+	.galley-link.btn {
+		display: inline-block;
+		// 2px margin left for border
+		margin: 0 0.5em 0.5em 2px;
+	}
+
+	.btn-group {
+		padding: 1em 0;
+	}
+
+	.pages {
+		color: @gray-light;
+		text-align: right;
+	}
+}
+
+// ----------------- custom publisher info ----------------
+#jss-publisher-list {
+	.content {
+		strong {
+			margin-right: 0.5em;
+		}
+	}
+}
+
+// ----------------- custom block announcements -----------
+#jss-announcement-list {
+    ul {
+        list-style: none;
+        padding: 0;
+
+        li {
+            padding: 0;
+            margin: 0;
+            border: none;
+	    color: @gray-light;
+	    
+	    a {
+		    color: @brand-primary;
+		    &:hover {
+			    color: @brand-secondary;
+		    }
+
+	    }
+	    svg {
+		    margin-right: 1em;
+	    }
+        }
+    }
+
+}
+
+
+#jss-copyright {
+	.content {
+		svg {
+			height: 27px;
+		}
+		img {
+			height: 27px;
+			width: auto;
+			margin-bottom: 10px;
+		}
+	}
+}
+
+
+// ----------------- custom block jss-sponsors ------------
+.pkp_block.jss-sponsors {
+	img {
+		max-width: 100%;
+	}
+}
+.pkp_block.jss-foas {
+	.logo-foas {
+		width: 45%;
+		min-width: 100px;
+		padding-right: 5%;
+		padding-bottom: 0.5em;
+	
+		img {
+			width: 100%;
+		}
+	
+	}
+
+	strong {
+		color: black;
+	}
+
+	&:hover {
+		strong {
+			color: @brand-secondary;
+		}
+	}
+}
+
+
+// -------------- customizing parts of footer -------------
+footer {
+
+	overflow: hidden;
+
+	.footer-menu {
+		list-style: none;
+		padding-left: 0;
+	}
+
+	.pkpinfo {
+		a {
+			float: right;
+			img.img-responsive {
+				width: 100%;
+				margin-top: 1em;
+				padding-right: 2em;
+				max-width: 200px;
+
+			}
+		}
+	}
+
+	.webfeed_footer {
+		a {
+			&:hover {
+				text-decoration: none;
+			}
+
+			&:first-child {
+				margin-right: 1em;
+			}
+		}
+	}
+}
+
+
+// ---------------- define button styles ------------------
+// Uses !important to overrule all other definitions with
+// more distinct paths in less/css.
+.btn  {
+    background-color: white !important;
+    border-radius: .2em !important;
+    border: 2px solid @brand-primary !important;
+    color: @brand-primary !important;
+
+    svg {
+        margin-right: 0.5em;
+    }
+
+    &:hover {
+        background-color: @brand-secondary !important;;
+	color: white !important;;
+
+	-webkit-transition: background-color 300ms linear !important;
+	-moz-transition: background-color 300ms linear !important;
+	-o-transition: background-color 300ms linear !important;
+	-ms-transition: background-color 300ms linear !important;
+        transition: background-color 1000ms linear !important;
+	
+	-webkit-transition: color 300ms linear !important;
+	-moz-transition: color 300ms linear !important;
+	-o-transition: color 300ms linear !important;
+	-ms-transition: color 300ms linear !important;
+        transition: color 300ms linear !important;
+    }
+}

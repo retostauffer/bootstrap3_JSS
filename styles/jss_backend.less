@@ -1,0 +1,82 @@
+@jss-pink: #d00a6c;
+
+
+.jss_subtitle {
+	color: @jss-pink;
+	margin-top: 0;
+	padding-top: 0 0 1em 0;
+	line-height: 1;
+	font-size: 80%;
+	font-weight: normal;
+}
+
+.jss_notification{
+
+	div{
+		&:before{
+			background: @jss-pink;
+		}
+
+		span{
+			&.title{
+				color: @jss-pink;
+			}
+		}
+	}
+
+}
+
+/* Hide the buttons in workflow/reviewRound.tpl */
+.jss_hidebuttons {
+	.pkp_button_offset {
+		line-height: 1.1em;
+		margin: 0.5em 0 1em 0;
+		padding: 1em 0.5em;
+	}
+}
+
+/* Hiding specific elements. Currently used to:
+ * - hide "title prefix" on submitStep3Form html form
+ * - hide "subtitle"     on submitStep3Form html form
+ *
+ * Controlled by templates/submission/submissionMetadataFormTitleFields.tpl
+ * included via  templates/submission/form/step3.tpl, both located in our
+ * custom child theme to overrule lib/pkp/templates/submission/ templates.
+ */
+.jss_theme_hide_element {
+	display: none;
+}
+
+/* As we hide some elements (title prefix and subtitle)
+ * we now adjust the 'title' field to be nicely displayed.
+ */
+.jss_submission_step3_title {
+	width: 100%;
+	padding-bottom: 2em;
+}
+
+/* We are manipulating some pages using js/jss_backend.js which adds
+ * elements or manipulates elements to set specific id's or classes.
+ * The reason for it is that we can manipulate it with js/css. The
+ * following definitions are set in place to deal with them.
+ */
+div {
+	&.jss_skipemail_hidden {
+		display: none;
+	}
+    &.jss_skipdiscussion_hidden {
+        display: none;
+    }
+}
+span {
+	&.jss_skipemail_hidden_change {
+		cursor: pointer;
+		color: #006798;
+	}
+	&.jss_skipdiscussion_hidden_change {
+		cursor: pointer;
+		color: #006798;
+	}
+}
+
+
