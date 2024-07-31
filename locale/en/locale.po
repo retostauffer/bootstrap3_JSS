@@ -1,0 +1,66 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2021-02-18T19:18:25+00:00\n"
+"PO-Revision-Date: 2021-02-18T19:18:25+00:00\n"
+"Language: \n"
+
+msgid "plugins.themes.bootstrap3JSS.latestAnnouncements"
+msgstr "Latest Announcements"
+
+msgid "plugins.themes.bootstrap3JSS.sponsors"
+msgstr "Sponsored by"
+
+msgid "plugins.themes.bootstrap3JSS.foas"
+msgstr "Support"
+
+msgid "plugins.themes.bootstrap3JSS.journalinformation"
+msgstr "Journal Information"
+
+msgid "plugins.themes.bootstrap3JSS.board"
+msgstr "Board"
+
+msgid "plugins.themes.bootstrap3JSS.license"
+msgstr "License Information"
+
+msgid "plugins.themes.bootstrap3JSS.footermenutitle"
+msgstr "Internal"
+
+msgid "plugins.themes.bootstrap3JSS.footermenutitleexternal"
+msgstr "External"
+					
+msgid "plugins.themes.bootstrap3JSS.articlefiles"
+msgstr "Files"
+
+msgid "plugins.themes.bootstrap3JSS.volume"
+msgstr "Volume"
+
+msgid "plugins.themes.bootstrap3JSS.number"
+msgstr "Number"
+
+msgid "plugins.themes.bootstrap3JSS.articlemeta"
+msgstr "Article Meta"
+
+msgid "plugins.themes.bootstrap3JSS.recentpublications"
+msgstr "Recent Publications"
+
+msgid "plugins.themes.bootstrap3JSS.publisher"
+msgstr "Publisher"
+
+msgid "plugins.themes.bootstrap3JSS.editorsinchief"
+msgstr "Editors-in-chief"
+
+msgid "plugins.themes.bootstrap3JSS.ISSN"
+msgstr "ISSN"
+
+msgid "plugins.themes.bootstrap3JSS.CODEN"
+msgstr "CODEN"
+
+msgid "plugins.themes.bootstrap3JSS.rolenav"
+msgstr "JSS Guides"
