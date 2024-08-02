@@ -2,3 +2,4 @@
 <i class="fas fa-exclamation-triangle" style="color: #e92c90; padding-right: 0.5em"></i>
 You can help us to improve our editorial management system by reporting possible issues
 [<a href="/announcement/view/12" target="_self">read more</a>].
+</div>
