@@ -114,14 +114,16 @@
 								<strong>{translate|escape key="plugins.themes.bootstrap3JSS.articlefiles"}:</strong>
 							</div>
 							<div class="col-xs-12 col-sm-8">
-								{foreach from=$article->getGalleys() item=galley}
-									{assign var=publication value=$article->getCurrentPublication()}
-									{assign var="hasArticleAccess" value=$hasAccess}
-									{if $currentContext->getSetting('publishingMode') == $smarty.const.PUBLISHING_MODE_OPEN || $publication->getData('accessStatus') == $smarty.const.ARTICLE_ACCESS_OPEN}
-										{assign var="hasArticleAccess" value=1}
-									{/if}
-									{include file="frontend/objects/galley_link.tpl" parent=$article hasAccess=$hasArticleAccess}
-								{/foreach}
+                                                                {if $primaryGalleys}
+                                                                        {foreach from=$primaryGalleys item=galley}
+                                                                                {include file="frontend/objects/galley_link.tpl" parent=$article purchaseFee=$currentJournal->getSetting('purchaseArticleFee') purchaseCurrency=$currentJournal->getSetting('currency')}
+                                                                        {/foreach}
+                                                                {/if}
+                                                                {if $supplementaryGalleys}
+                                                                        {foreach from=$supplementaryGalleys item=galley}
+                                                                                {include file="frontend/objects/galley_link.tpl" parent=$article isSupplementary="1"}
+                                                                        {/foreach}
+                                                                {/if}
 							</div>
 						</div>
                         		{/if}
