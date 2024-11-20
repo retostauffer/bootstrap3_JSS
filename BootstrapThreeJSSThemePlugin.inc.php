@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file plugins/themes/default/BootstrapThreeJSSThemePlugin.inc.php
  *
@@ -16,131 +15,137 @@
 import('lib.pkp.classes.plugins.ThemePlugin');
 class BootstrapThreeJSSThemePlugin extends ThemePlugin {
 
+	/**
+	 * Extracting issue number from publisher-id.
+	 *
+	 * In JSS we always have one issue per volume. Thus, the
+	 * submission number is always 1 and does not give us what we need.
+	 * Instead we register this new function/hook to be used on the frontend.
+	 *
+	 * Used in objects/article_details.tpl
+	 */
+	public function get_jss_issue_number($hookName, $args) {
+		$params =& $args[0];
+		$smarty =& $args[1];
+		$output =& $args[2];
 
-        /**
-         * Extracting issue number from publisher-id.
-         *
-         * In JSS we always have one issue per volume. Thus, the
-         * submission number is always 1 and does not give us what we need.
-         * Instead we register this new function/hook to be used on the frontend.
-         *
-         * Used in objects/article_details.tpl
-         */
-        public function get_jss_issue_number($hookName, $args) {
-            $params =& $args[0];
-            $smarty =& $args[1];
-            $output =& $args[2];
+		$article     = $smarty->getTemplateVars('article');
+		$publication = $article->getCurrentPublication();
+		$urlPath     = $publication->getData('urlPath');
 
-            $article     = $smarty->getTemplateVars('article');
-            $publication = $article->getCurrentPublication();
-            $urlPath     = $publication->getData('urlPath');
+		// Default is "N/A"
+		$output = "N/A";
+		preg_match("/^v([0-9]+)(\w)([0-9]+)$/", $urlPath, $res);
+		if (is_array($res) && count($res) == 4) {
+			$output = sprintf("%d", (int)$res[3]);
+		}
 
-            // Default is "N/A"
-            $output = "N/A";
-            preg_match("/^v([0-9]+)(\w)([0-9]+)$/", $urlPath, $res);
-            if (is_array($res) && count($res) == 4) {
-            	$output = sprintf("%d", (int)$res[3]);
-            }
-
-            return false;
-        }
+		return false;
+	}
 
 
-        /**
-         * Initialize the theme
-         *
-         * @return null
-         */
-        public function init() {
+	/**
+	 * Initialize the theme
+	 *
+	 * @return null
+	 */
+	public function init() {
 
-        	# Required to be able to set variables for the templating engine
-        	HookRegistry::register ('TemplateManager::display', array($this, 'loadTemplateData'));
+		# Required to be able to set variables for the templating engine
+		HookRegistry::register('TemplateManager::display', array($this, 'loadTemplateData'));
 
-        	HookRegistry::register('Templates::Common::getJSSIssueNumber', [$this, 'get_jss_issue_number']);
+		HookRegistry::register('Templates::Common::getJSSIssueNumber', [$this, 'get_jss_issue_number']);
 
-        	$this->setParent('bootstrapthreethemeplugin');
+		$this->setParent('bootstrapthreethemeplugin');
 
-        	// Register option for bootstrap themes
-        	$this->removeOption('bootstrapTheme', 'FieldOptions');
-        	$this->modifyStyle('bootstrap',
-        	                    array('addLess' => array('styles/jss.less', 'fontawesome/less/fontawesome.less')));
-		//$this->modifyStyle('pkpLib', array('addLess' => array('styles/jss_backend.less')));
-		$this->addStyle('my-custom-style', 'styles/jss_backend.less', array( 'contexts' => 'backend' ));
+		// Register option for bootstrap themes
+		$this->removeOption('bootstrapTheme', 'FieldOptions');
+		$this->modifyStyle('bootstrap', array('addLess' => array('styles/jss.less', 'fontawesome/less/fontawesome.less')));
+		$this->addStyle('my-custom-style', 'styles/jss_backend.less', array('contexts' => 'backend'));
 
-		// Adding custom jQuery script to manipulate
-		// some pages/popups without the need to change
-		// the system or theme.
-		$this->addScript('my-custom-script', 'js/jss_backend.js', array( 'contexts' => 'backend' ));
-		
-		
-		
+		// Adding custom jQuery script to manipulate some pages/popups
+		// without the need to change the system or theme.
+		$this->addScript('my-custom-script', 'js/jss_backend.js', array('contexts' => 'backend'));
+
 		$this->addScript('fontawesome', 'fontawesome/js/all.min.js');
 
-        	$this->addMenuArea(array("footerMenu"));
-        	$this->addMenuArea(array("footerMenuExternal"));
+		$this->addMenuArea(array("footerMenu"));
+		$this->addMenuArea(array("footerMenuExternal"));
 
-        	//////////$this->addOption("jss_publisher_top", "FieldOptions", [
-        	//////////        "type" => "radio",
-        	//////////        "label" => "Publisher shown top of page?",
-        	//////////        "description" => "Enable/disable publisher on top of page",
-        	//////////        "options" => [
-        	//////////            ["value" => "1", "label" => "Yes"],
-        	//////////            ["value" => "0", "label" => "No"],
-        	//////////        ],
-        	//////////    ]
-        	//////////);
-        	$this->addOption("jss_published_by", "FieldText", [
-        	        "name" => "jss_published_by",
-        	        "label" => "Published by ...",
-        	        "default" => "Foundation for Open Access Statistics"
-        	    ]
-        	);
-        	$this->addOption("jss_editors_in_chief", "FieldText", [
-        	        "name" => "jss_editors_in_chief",
-        	        "label" => "Our editors in chief"
-        	    ]
-        	);
-        	$this->addOption("jss_issn", "FieldText", [
-        	        "name" => "jss_issn",
-        	        "label" => "JSSN number",
-        	        "default" => "1548-7660"
-        	    ]
-        	);
-        	$this->addOption("jss_coden", "FieldText", [
-        	        "name" => "jss_coden",
-        	        "label" => "CODEN identifier",
-        	        "default" => "JSSOBK"
-        	    ]
-        	);
-        	$this->addOption("jss_announcements_limit", "FieldText", [
-        	        "name" => "jss_announcements_limit",
-        	        "label" => "Number of announcements in sidebar-list (positive integer)",
-			"default" => "3"
-        	    ]
-        	);
+		//$this->addOption("jss_publisher_top", "FieldOptions", [
+		//        "type" => "radio",
+		//        "label" => "Publisher shown top of page?",
+		//        "description" => "Enable/disable publisher on top of page",
+		//        "options" => [
+		//            ["value" => "1", "label" => "Yes"],
+		//            ["value" => "0", "label" => "No"],
+		//        ],
+		//    ]
+		//);
+		$this->addOption("jss_published_by", "FieldText", [
+				"name" => "jss_published_by",
+				"label" => "Published by ...",
+				"default" => "Foundation for Open Access Statistics"
+			]
+		);
+		$this->addOption("jss_editors_in_chief", "FieldText", [
+				"name" => "jss_editors_in_chief",
+				"label" => "Our editors in chief"
+			]
+		);
+		$this->addOption("jss_issn", "FieldText", [
+				"name" => "jss_issn",
+				"label" => "JSSN number",
+				"default" => "1548-7660"
+			]
+		);
+		$this->addOption("jss_coden", "FieldText", [
+				"name" => "jss_coden",
+				"label" => "CODEN identifier",
+				"default" => "JSSOBK"
+			]
+		);
+		$this->addOption("jss_announcements_limit", "FieldText", [
+				"name" => "jss_announcements_limit",
+				"label" => "Number of announcements in sidebar-list (positive integer)",
+				"default" => "3"
+		    ]
+		);
 
-        }
+		// Overwrite options set by the parent theme; we use a redirect rule to
+		// remove index.php/jss from the URLs, we need to add lib/pkp here to 
+		// include the correct files.
+		$min      = Config::getVar('general', 'enable_minified') ? '.min' : '';
+		$jpath    = "/lib/pkp/lib/vendor/components/";
+		$request  = Application::get()->getRequest();
+		$jquery   = $request->getBaseUrl() . $jpath . 'jquery/jquery' . $min . '.js';
+		$jqueryUI = $request->getBaseUrl() . $jpath . 'jqueryui/jquery-ui' . $min . '.js';
+		$this->addScript('jQuery', $jquery, array('baseUrl' => ''));
+		$this->addScript('jQueryUI', $jqueryUI, array('baseUrl' => ''));
+
+	}
 
 	public function loadTemplateData($hookName, $args) {
 		$templateMgr = $args[0];
 		
 		# Options to add
 		$opts = ["jss_publisher_top"    => "jssPublisherTop",
-		         "jss_coden"            => "jssCoden",
-		         "jss_issn"             => "jssISSN",
-		         "jss_published_by"     => "jssPublishedBy",
-			 "jss_editors_in_chief" => "jssEditorsInChief",
-			 "jss_announcements_limit" => "jssAnnouncementLimit"];
+			"jss_coden"            => "jssCoden",
+			"jss_issn"             => "jssISSN",
+			"jss_published_by"     => "jssPublishedBy",
+			"jss_editors_in_chief" => "jssEditorsInChief",
+			"jss_announcements_limit" => "jssAnnouncementLimit"];
 		
 		# optname is the option name of the theme, varname
 		# the final variable name used in the templates
 		foreach ($opts as $optname=>$varname) {
+
 			if ($this->getOption($optname)) {
 				$res = $this->getOption($optname);
 			} else {
 				$res = "option not set!";
 			}
-			
+
 			// Force integer if jss_announcements_limit
 			if ($optname == "jss_announcements_limit") {
 				preg_match("/^[0-9]+$/", $res, $tmp);
@@ -151,7 +156,7 @@ class BootstrapThreeJSSThemePlugin extends ThemePlugin {
 					$res = "3"; # fallback
 				}
 			}
-			
+
 			// Assign
 			$templateMgr->assign($varname, $res);
 		}
@@ -164,7 +169,7 @@ class BootstrapThreeJSSThemePlugin extends ThemePlugin {
 	function getDisplayName() {
 	        return "Bootstrap 3 for JSS";
 	}
-	
+
 	/**
 	 * Get the description of this plugin
 	 * @return string
