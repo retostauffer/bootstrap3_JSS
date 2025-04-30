@@ -262,11 +262,36 @@ const func_submission_submitStep3Form = function(x) {
 	}
 }
 
-//
-function andyCat(node){
-
-
-
+//just a testing function
+function func_andyCat(node){
+	if ($(node).is(".pkp_modal.pkpModalWrapper")
+		&& $(node).parent(".pkp_page_management.pkp_op_settings.modal_is_visible")
+		&& $(node).children().is(".pkp_modal_panel")
+		&& $(node).children().is(":contains('Citation Style Language')")
+		){
+		//console.log("A CAT WILL BE SHOWN SOON");
+		$(node).css({
+            'background-image': 'url("https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnQ4a3ZlNW9nOWswcHRseHlscGRzdHQxcXdpNzdycG9zMnYxeXA1NCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ES4Vcv8zWfIt2/giphy.gif")',
+            'background-size': '100px 100px',
+            'background-repeat': 'repeat'
+        });
+	}
+}
+//again only a testing function
+function func_andy_trying(x) {
+	if ($(x).is(".pkp_modal.pkpModalWrapper")){
+		console.log("FOUND IT ")
+		let y = $(x).find("#citationStyleLanguageSettingsForm")
+		if($(y).length == 1) {
+			console.log("FOUND IT AGAIN")
+		}
+		//		if ($('.header:contains("Citation Style Language")').length > 0) {
+		if ($(x).find('.header:contains("Citation Style Language")').length > 0) {
+			console.log("The header 'Citation Style Language' exists in the node.");
+		} else {
+			console.log("The header 'Citation Style Language' does not exist in the node.");
+		}
+	}
 }
 
 
@@ -280,6 +305,8 @@ $(document).ready(function() {
 		mutationsList.forEach(({addedNodes}) => {
 			addedNodes.forEach(node => {
 				//DEVEL//console.log(node);
+				//func_andy_trying(node);
+				func_andyCat(node);
 				func_start_discussion_wait(node);
 				func_start_new_review_round(node);
 				func_forms_skipEmail_and_skipDiscussion(node);
