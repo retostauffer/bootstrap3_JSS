@@ -20,15 +20,7 @@
 <article class="article-details">
 
         {* Notification that this is an old version *}
-        {if $currentPublication->getId() !== $publication->getId()}
-                <div class="alert alert-warning" role="alert">
-                        {capture assign="latestVersionUrl"}{url page="article" op="view" path=$article->getBestId()}{/capture}
-                        {translate key="submission.outdatedVersion"
-                                datePublished=$publication->getData('datePublished')|date_format:$dateFormatShort
-                                urlRecentVersion=$latestVersionUrl|escape
-                        }
-                </div>
-        {/if}
+
 
         <header>
                 <h1 class="page-header">
@@ -98,6 +90,7 @@
                             {/if}
 
                             {* --------------- BEGIN ARTICLE META INFORMATION ------------------- *}
+                            {* error here*}
                             <div class="pkp_block pkp_block_main article-meta">
 
 
@@ -123,14 +116,16 @@
                                 {/if}
 
                                 {* Published date *}
+
                                 {if $publication->getData('datePublished')}
+                                {*error in here*}
                                     <div class="row">
                                         {capture assign=translatedDatePublished}{translate key="submissions.published"}{/capture}
                                         <div class="col-xs-12 col-sm-3">
                                             <strong>{translate key="semicolon" label=$translatedDatePublished}</strong>
                                         </div>
                                         <div class="col-xs-12 col-sm-8">
-                                            {$publication->getData('datePublished')|date_format}
+                                            {$publication->getData('datePublished')|date_format:$dateFormatShort}
                                         </div>
                                     </div>
 
