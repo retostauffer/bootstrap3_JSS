@@ -320,8 +320,29 @@ $(document).ready(function() {
 			});
 		});
 	});
+	//Explained: the actual MutationObserver usage looks like this: 
+	//	const observer = new MutationObserver((mutationsList))
+	// where mutationsList is the callback-function that is called every time the 
+	// MutationObserver "senses" a change. 
+	//we just add an arrow-function (https://www.w3schools.com/js/js_arrow_function.asp)
+	//	this function takes as input an array of all the different mutations that occurred, 
+	// 	(an array of MutationRecord objects)
+	//	each MutationRecord object has multiple properties (like type, target, and addedNodes)
+	//	we take this addedNodes (a NodeList of nodes that were added to the DOM) and loop through
+	//	Each of added node. 
+	//	for each such node we use that node to call the different functions. 
+
+
+
 
 	// Start observing the target node with the configured options
 	observer.observe(document.body, {childList: true, subtree: true});
+	//Explained: this is the observe() function from our MutationObserver "observer".
+	//here we tell it what to watch in the DOM and how to watch it:
+	//	Target node to observe → document.body
+	//	Configuration options → { childList: true, subtree: true }
+	//		childList – changes in the direct children of node,
+	//		subtree – in all descendants of node,
+
 
 }); // End on document ready
