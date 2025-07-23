@@ -9,6 +9,9 @@
 // -------------------------------------------------------------------
 
 
+
+
+//ojs34: This function seems to be OBSOLETE/NOT NECESSARY ANYMORE.
 // -------------------------------------------------------------------
 // Whenever a form is added we check if it has a skipEmail or
 // skipDiscussion option. If so, we 'hide' that selection from the
@@ -19,10 +22,26 @@
 // ... not sure where else it occurs (if even).
 // -------------------------------------------------------------------
 const func_forms_skipEmail_and_skipDiscussion = function(x) {
+
+//testing: Andy: it seems "skip this email" is still displayed for me. therefore investigate. 
+		//"Skip Email" seems to NOT be added as a node, 
+		// but be present on new "Accept Submission: Notify Authors" page "from the start" 
+		// -> therefore it is not picked up by our search. 
+		//var skipEmailDivsAndy = $(x).find(".decision__footer.decision__skipStep -linkButton"); 
+		var skipEmailDivsAndy = $(".decision__footer").find("button.decision__skipStep.-linkButton");
+		$.each(skipEmailDivsAndy, function() {
+			alert("Found: skipEmailDivsAndy " + $(this))
+		});
+		//Check back with Reto if this is the intended target. -> finetune search for it/find other way to hide it. 
+
+
+
 	if ($(x).is("form")) {
-		// Looking for element with id "skipEmail-send". Whenever found,
-		// make sure it is checked (do send email; don't skip) and hide
-		// closest parent div behind a text.
+		// Looking for element with id "skipEmail-send" within (x). 
+		//".section:has(#skipEmail-send)": Selects every element with class section that contains at least one descendant element with the ID skipEmail-send.
+		// returns a jQuery object containing all .section elements inside x that have such a descendant. 
+		// Whenever found, make sure it is checked (do send email; don't skip) 
+		// and hide closest parent div behind a text.
 		var skipEmailDivs = $(x).find(".section:has(#skipEmail-send)");
 		$.each(skipEmailDivs, function() {
 			// Now do the following with it
@@ -31,6 +50,7 @@ const func_forms_skipEmail_and_skipDiscussion = function(x) {
 			//   on the id for further manipulation in case it occurs more than
 			//   once - which is should not!)
 			// - add content of existing div to the new div
+			alert("Found: " + $(this))
 			var old_content = $(this).html()
 			var newdiv_msg = $(this).empty()
 				.html("<span class=\"jss_skipemail_hidden_change\">An email notification will be sent (click to change decision).</span>")
@@ -40,6 +60,7 @@ const func_forms_skipEmail_and_skipDiscussion = function(x) {
 			// Now add interaction
 			$(newdiv_msg).on("click", function() { $(this).find("div").show(); });
 		}); // end skip email
+
 
 		// Similar to the code chunk above: Hiding the options for
 		// selecting "Do not create a review discussion" to avoid SEs to
@@ -53,6 +74,7 @@ const func_forms_skipEmail_and_skipDiscussion = function(x) {
 			//   on the id for further manipulation in case it occurs more than
 			//   once - which is should not!)
 			// - add content of existing div to the new div
+			alert("Found: " + $(this))
 			var old_content = $(this).html();
 			var newdiv_msg = $(this).empty()
 				.html("<span class=\"jss_skipdiscussion_hidden_change\">A review discussion will be started (click to change decision).</span>")
@@ -68,11 +90,14 @@ const func_forms_skipEmail_and_skipDiscussion = function(x) {
 }
 
 // -------------------------------------------------------------------
-// When adding a production editor, trying to automatically change
-// the email template to 'add production editor'.
+// Updated for ojs3.4
+// When adding a production editor, automatically change
+// the email template to 'add production editor'. ("PRODUCTION_EDITOR_ASSIGNED_DISCUSSION_NOTIFICATION_COPYEDITING")
+// (Note: when changing selection away from "Production Editor" in the form -> the Message is NOT cleared automatically.)
 // -------------------------------------------------------------------
 const func_assign_participant_form = function(x) {
 	if ($(x).is("#addParticipantForm")) {
+		//alert("Found Participant form");
 		// Adding live event handler
 		$(x).on("change", function() {
 			var selected = $(this).find("option:selected");
@@ -84,9 +109,9 @@ const func_assign_participant_form = function(x) {
 			// text with our template automatically.
 			if (selected_text.toLowerCase() == "production editor") {
 				var templates = $("#notifyFormArea select#template");
-				var tmp = $(templates).find("option[value = 'PRODUCTION_EDITOR_ASSIGNED']");
+				var tmp = $(templates).find("option[value = 'PRODUCTION_EDITOR_ASSIGNED_DISCUSSION_NOTIFICATION_COPYEDITING']");
 				if (tmp.length == 1) {
-				    $(templates).val("PRODUCTION_EDITOR_ASSIGNED").trigger("change");
+				    $(templates).val("PRODUCTION_EDITOR_ASSIGNED_DISCUSSION_NOTIFICATION_COPYEDITING").trigger("change");
 				}
 			}
 		});
@@ -96,7 +121,8 @@ const func_assign_participant_form = function(x) {
 // -------------------------------------------------------------------
 // Adding a note on the form which initializes new review rounds.
 // -------------------------------------------------------------------
-const func_start_new_review_round = function(x) {
+//not working in ojs34 
+const func_start_new_review_roundOLD = function(x) {
 	if ($(x).is("#newRoundForm")) {
 		$(x).before("<div class=\"pkp_notification jss_notification\"><div class=\"notifyInfo\" style=\"margin-bottom: 0;\">" +
 					"<strong>Important:</strong><br/>" +
@@ -106,6 +132,54 @@ const func_start_new_review_round = function(x) {
 					"</div></div>");
 	}
 }
+
+
+//as the "New Review Round Start Screen" is now a new webpage and not only a popup, 
+// the Mutation-observer is not the right tool to look for that. 
+const NON_MUT_OBSERVER_start_new_review_round = function() {
+	//exact text we want to find. above this we want to add a NOTE BEFORE NEW REVIEW ROUND
+	const exactPText = "Send an email to the authors to let them know that their submission has been sent for a new round of review. This email will not be sent until the decision has been recorded.";
+	const requiredH2Text = "Notify Authors";
+
+	// New: Initial check for the existence of any div.panelSection__content
+	const $allPanelSections = $('div.panelSection__content');
+	if ($allPanelSections.length === 0) {
+	  // console.log("No div.panelSection__content elements found. Exiting.");
+	  return; // Exit the function early if no base elements are present
+	}	
+
+	// Proceed with the more specific filtering only if base elements exist
+	const $targetDiv = $allPanelSections.filter(function() {
+		const $this = $(this);
+		const h2Text = $this.find('h2').text().trim();
+		const pText = $this.find('p').text().trim();	
+		return h2Text === requiredH2Text && pText === exactPText;
+	});	
+	// Check if the specific target div was found after filtering
+	if ($targetDiv.length) {
+		//get immediate parent of current target div
+		const $parentSectionDiv = $targetDiv.closest('div.panelSection.decision__stepHeader');
+		
+		if ($parentSectionDiv.length) {
+			const notificationHtml = `
+			  <div class="pkp_notification jss_notification">
+			    <div class="notifyInfo" style="margin-bottom: 0;">
+			      <strong>Important:</strong><br/>
+			      Do <strong>not start a new review</strong> round immediately after requesting revision!<br/>
+			      A new round is initialized <strong>once the authors have uploaded all revisions</strong> and the material is ready for a new review round.
+			      See section 'Revisions' in our <a href="/guides/editors" target="_blank" rel="noopener noreferrer">Editorial guide</a>.
+			    </div>
+			  </div>
+			`;
+			$parentSectionDiv.before(notificationHtml);
+			// console.log("Added 'NOTE BEFORE NEW REVIEW ROUND' notification.");
+		}
+	}
+};
+
+
+
+
 
 // -------------------------------------------------------------------
 // The 'Add discussion' form can take some time to be loaded.
@@ -306,10 +380,11 @@ $(document).ready(function() {
 			addedNodes.forEach(node => {
 				//DEVEL//console.log(node);
 				//func_andy_trying(node);
+				//alert("Found: " + $(this));
 				func_andyCat(node);
 				func_start_discussion_wait(node);
 				func_start_new_review_round(node);
-				func_forms_skipEmail_and_skipDiscussion(node);
+				//func_forms_skipEmail_and_skipDiscussion(node);
 				func_decision_revision_attachments(node);
 				func_decision_option_and_include_review(node);
 				func_send_issue_notification(node);
@@ -343,6 +418,15 @@ $(document).ready(function() {
 	//	Configuration options → { childList: true, subtree: true }
 	//		childList – changes in the direct children of node,
 	//		subtree – in all descendants of node,
+
+
+//-----------------------------------------------------------------
+// NON MUTATION OBSERVER FUNCTIONS: 
+// to be run once when the document is loaded. Not whenever a node is added. 
+
+	NON_MUT_OBSERVER_start_new_review_round(); 
+
+//-----------------------------------------------------------------
 
 
 }); // End on document ready
