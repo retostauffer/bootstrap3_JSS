@@ -182,6 +182,10 @@ const NON_MUT_OBSERVER_start_new_review_round = function() {
 
 
 // -------------------------------------------------------------------
+//still working in ojs34. Could use improvement for removing this text, when the form has finished loading. 
+//collecting some ideas/notes for that: 
+//https://getbootstrap.com/docs/4.0/components/modal/
+//
 // The 'Add discussion' form can take some time to be loaded.
 // If the user clicks somewhere else (closes) early, an empty discussion
 // is started which helps no one. Thus, we show a quick note.
@@ -189,17 +193,155 @@ const NON_MUT_OBSERVER_start_new_review_round = function() {
 const func_start_discussion_wait = function(x) {
 	if ($(x).is(".pkp_modal")) {
 		let div = $(x).find(".pkp_modal_panel > .header:contains('Add discussion')");
-		$(div).html($(div).text() + "<div class=\"jss_subtitle\">Please wait while form is loading.</div>");
+		let subtitle = $("<div class=\"jss_subtitle\">Please wait while form is loading.</div>");
+        $(div).append(subtitle);
+		
+		//setInterval(() => {
+		//	let spinner = $(x).find("span.pkp_spinner");
+		//  	const opacity = window.getComputedStyle(spinner[0]).opacity;
+		//  	if (opacity === '0') {
+		//    	console.log('Opacity is now 0');
+		//		//want to set subtitle opacity to 0
+		//		$(subtitle).css('opacity', '0');
+		//		return;
+		//  	}
+		//}, 100);
 	}
 };
 
+//New approach to "Prevent empty discussions because of slow 'discussion-modal' load"
+// The 'Add discussion' form can take some time to be loaded.
+// If the user clicks somewhere else (closes) early, an empty discussion
+// is started which helps no one. Thus, we show a quick note.
+//
+//this utilizes another mutationObserver (here called tinyObserver),
+// and checks if the tinyMCE has loaded and is visible. 
 // -------------------------------------------------------------------
+const observeTinyMCEAndRemoveSubtitle = function(targetElement, $subtitle) {
+    if (!$subtitle || !$subtitle.length || !targetElement) {
+        // If subtitle is already gone, or targetElement is invalid, do nothing or log error.
+        if (targetElement) {
+            console.error("Invalid subtitle or target element provided for TinyMCE observation.");
+        }
+        $subtitle?.remove(); // Safely try to remove if it exists, for cleanup
+        return;
+    }
+
+    let tinyObserver = null; // Declare observer here for global scope within the function
+
+	const fadeOutAndRemove = () => {
+        // Use fadeOut() to smoothly transition the element out.
+        // The element is removed from the DOM only after the animation completes.
+        $subtitle.fadeOut(1000, function() {
+            $(this).remove();
+        });
+        tinyObserver?.disconnect();
+        //console.log("TinyMCE editor is now fully visible and rendered.");
+    };
+
+    const checkAndComplete = () => {
+        const tinyMceContainer = $(targetElement).find('.tox.tox-tinymce[role="application"]')[0];
+        if (tinyMceContainer) {
+            const isVisible = $(tinyMceContainer).is(':visible') && $(tinyMceContainer).css('visibility') !== 'hidden';
+            if (isVisible) {
+				//alert("checkAndComplete: tinyMceContainer is visible"); //finally getting past here! 
+                fadeOutAndRemove();
+                return true; // Indicate completion
+            }
+        }
+        return false; // Not yet complete
+    };
+
+    // 1. Immediate check: Is TinyMCE already present and visible?
+    if (checkAndComplete()) {
+        return; // If yes, we're done
+    }
+
+    // 2. If not immediately visible, set up a MutationtinyObserver
+    tinyObserver = new MutationObserver((mutationsList, currentObserver) => {
+        // We can just call checkAndComplete inside the callback.
+        // It will disconnect the observer if successful.
+        checkAndComplete();
+    });
+
+    // Observe both child additions (for TinyMCE appearing) and attribute changes (for its style/visibility)
+    // The `subtree: true` is crucial for finding elements nested deep within the targetElement.
+    tinyObserver.observe(targetElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+
+    // 3. Fallback timeout: Ensure subtitle is removed even if observation fails
+    setTimeout(() => {
+        if ($subtitle.is(':visible')) {
+            fadeOutAndRemove();
+            console.warn("Forced removal of loading message after timeout. TinyMCE might not have loaded or observer missed it.");
+        }
+    }, 10000); // 10 seconds fallback
+};
+
+const func_start_discussion_wait_andy = function(node) {
+    // Basic validation: ensure is the one modal we are looking for. 
+    //if (!$(node).is(".pkp_modal.pkpModalWrapper.is_visible")) {
+    if (!$(node).is(".pkp_modal")) {
+        
+		return;
+    }
+	//alert("it's the pkp_modal!"); //getting past here works!
+
+    const $modalElement = $(node);
+
+    // Locate the header where the subtitle will be appended
+    const $headerDiv = $modalElement.find(".pkp_modal_panel > .header:contains('Add discussion')");
+    if (!$headerDiv.length) {
+        console.warn("Modal header for 'Add discussion' not found within modal:", node);
+        return;
+    }
+
+    // Prevent adding multiple subtitles to the same modal
+    if ($headerDiv.find('.jss_subtitle').length > 0) {
+        return;
+    }
+
+    // Create and append the loading subtitle
+    const $subtitle = $("<div class=\"jss_subtitle\">Please wait while form is loading.</div>");
+    $headerDiv.append($subtitle);
+   //console.log("Loading subtitle added to modal:", node.id);
+
+    // Get the content area which is the parent of where TinyMCE will appear
+    const modalContentArea = $modalElement.find(".pkp_modal_panel > .content")[0];
+
+    // Initiate the TinyMCE observation process with the content area and subtitle
+    observeTinyMCEAndRemoveSubtitle(modalContentArea, $subtitle);
+};
+
+
+
+
+
+
+// -------------------------------------------------------------------
+// "Request revision" - Patch: 
+// when Journal editor clicks "Request Revision" 
+//	-> we change the pre-selected option to: "Revisions will be subject to a new round of peer reviews."
+// other patches run in different function, as they are on another page. 
+// -------------------------------------------------------------------
+const func_decision_option_and_include_review = function(x) {
+	if ($(x).is('div.v--modal-overlay[data-modal="selectRevisionDecision"]')) {
+  		//alert("Found 'div.v--modal-overlay[data-modal=\"selectRevisionDecision\"]'");
+		//Auto-Check the option: "Revisions will be subject to a new round of peer reviews.""
+
+		setTimeout(() => {
+  			$('input[name="decision"][value="5"]').prop('checked', true);
+		}, 250);
+	}
+}
+
+// -------------------------------------------------------------------
+//beginning of modified version above. 
 // Modify the form when an editor clicks "Request revision".
 // There are a few bits and bobs going on inside (see comments).
 // - #promote (accept)
 // - #sendReviews (review, decline)
 // -------------------------------------------------------------------
-const func_decision_option_and_include_review = function(x) {
+const func_decision_option_and_include_review_OLD = function(x) {
 	if ($(x).is("#sendReviews") || $(x).is("#promote")) {
 
 		// If the article has reviews ther is a button "+ Add Reviews to Email".
@@ -382,8 +524,9 @@ $(document).ready(function() {
 				//func_andy_trying(node);
 				//alert("Found: " + $(this));
 				func_andyCat(node);
-				func_start_discussion_wait(node);
-				func_start_new_review_round(node);
+				//func_start_discussion_wait(node);
+				func_start_discussion_wait_andy(node);
+				//func_start_new_review_round(node);
 				//func_forms_skipEmail_and_skipDiscussion(node);
 				func_decision_revision_attachments(node);
 				func_decision_option_and_include_review(node);
