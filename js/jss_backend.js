@@ -334,6 +334,309 @@ const func_decision_option_and_include_review = function(x) {
 	}
 }
 
+
+
+//TODO: needs "beatiful pink" warning: "Please wait, while reviews are being attached"
+// below the "Notify Authors" 
+//that is removed after action has been completed (fadeOut())
+//this version is not quite working, revised version below. 
+const NON_MUT_OBSERVER_request_revision_ATTACH_FILES_version1 = function(x) {
+	const exactPText = "Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.";
+	const requiredH2Text = "Notify Authors";
+
+	// New: Initial check for the existence of any div.panelSection__content
+	const $allPanelSections = $('div.panelSection__content');
+	if ($allPanelSections.length === 0) {
+	  // console.log("No div.panelSection__content elements found. Exiting.");
+	  return; // Exit the function early if no base elements are present
+	}	
+
+	// Proceed with the more specific filtering only if base elements exist
+	const $targetDiv = $allPanelSections.filter(function() {
+		const $this = $(this);
+		const h2Text = $this.find('h2').text().trim();
+		const pText = $this.find('p').text().trim();	
+		return h2Text === requiredH2Text && pText === exactPText;
+	});	
+	// Check if the specific target div was found after filtering
+	if (!$targetDiv.length) {
+    // Target section/page not found
+    	return;
+  	}
+
+	//might need a mutObserver to check for appearance of button to click here. 
+	// Step 1: Click "Attach Files" button to open modal
+	const attachFilesBtn = document.querySelector('.tox-tbtn--select'); 
+  	if (!attachFilesBtn) {
+  	  	console.warn('Attach Files button not found.');
+  	  	return;
+  	}
+
+	//making all modal classes invisible for the time being. 
+	//THIS NEEDS TO BE REVERTED AT THE END OF THE FUNCTION! 
+	const allModals = document.querySelectorAll(".modal"); 
+	if (allModals.length > 0) {
+  		allModals.forEach(modal => {
+    		// Hide modal and disable mouse/touch interactions
+    		modal.style.opacity = '0';
+    		modal.style.pointerEvents = 'none';
+
+    		// Add keydown listener to block all keyboard events inside this modal
+    		const keyboardBlocker = function(e) {
+    		  e.preventDefault();
+    		  e.stopPropagation();
+    		};
+
+    		modal.addEventListener('keydown', keyboardBlocker, true);
+
+    		// Save the listener function on the modal element so you can remove it later to revert
+    		modal._keyboardBlocker = keyboardBlocker;
+  		});
+	}
+	 
+	// Later, to revert everything (restore visibility, mouse events and keyboard handling):
+	const revert_modal_visibility = function(){
+		allModals.forEach(modal => {
+	  		modal.style.opacity = '';
+	  	  	modal.style.pointerEvents = '';
+	  	  	if (modal._keyboardBlocker) {
+	  	  	  	modal.removeEventListener('keydown', modal._keyboardBlocker, true);
+	  	  	  	delete modal._keyboardBlocker;
+	  	  	}
+	  	});
+	}
+
+
+  	attachFilesBtn.click();
+
+	// Step 2: Wait for modal to render and then automate inside modal
+  	// Use a MutationObserver or setTimeout—here we use setTimeout for simplicity
+  	setTimeout(() => {
+    	// Select the modal overlay that contains the modal content
+    	const modalOverlay = document.querySelector('.v--modal-overlay.scrollable');
+    	//TODO: might need mutObserver here, so it doesnt just give up. 
+		if (!modalOverlay) {
+    		console.warn('Modal overlay not found.');
+			revert_modal_visibility();
+    		return;
+    	}
+		// Inside modal, find and click "Attach Review Files" button
+    	const attachReviewFilesBtn = modalOverlay.querySelector('.fileAttacher #attacher1 button.pkpButton');
+    	if (!attachReviewFilesBtn) {
+    	  	console.warn('Attach Review Files button not found.');
+    	  	// Restore modal interactivity before exit
+    	  	revert_modal_visibility();
+    	  	return;
+    	}
+
+    	attachReviewFilesBtn.click();
+
+		// Step 3: Wait for "Review Files" list to load, then select all checkboxes and attach
+    	setTimeout(() => {
+    	  	// Select modalBox for review files UI
+    	  	const modalBox = modalOverlay.querySelector('.v--modal-box.v--modal');
+    	  	if (!modalBox) {
+    	  	  console.warn('Modal box not found after clicking Attach Review Files.');
+    	  	  revert_modal_visibility();
+    	  	  return;
+    	  	}
+		  
+    	  	// Select all checkboxes for review files
+    	  	const checkboxes = modalBox.querySelectorAll('.fileAttacherReviewFiles input[type="checkbox"]');
+    	  	if (checkboxes.length === 0) {
+    	  	  	console.warn('No review file checkboxes found.');
+				revert_modal_visibility();
+    	  	  	return;
+    	  	}
+		  
+    	  	checkboxes.forEach(chk => {
+    	  	  	if (!chk.checked) chk.click();  // check the box (use click to trigger events if needed)
+			});
+		
+
+			// After checking boxes, find the Attach Selected button
+    		const attachSelectedBtn = modalBox.querySelector('.fileAttacherReviewFiles .buttonRow button.pkpButton:not([disabled])')
+    		  	|| modalBox.querySelector('.fileAttacherReviewFiles .buttonRow button.pkpButton'); // fallback
+    		if (!attachSelectedBtn) {
+    		  	console.warn('Attach Selected button not found.');
+    		  	// restore modal UI
+    		  	revert_modal_visibility();
+    		  	return;
+    		}
+			// Enable and click the Attach Selected button only if disabled (UNSURE IF NEEDED)
+      		if (attachSelectedBtn.disabled) {
+      		  	// There is no direct way to enable button if controlled by framework, so alternatively:
+      		  	// dispatch input/change events on inputs again, or try clicking anyway:
+      		  	attachSelectedBtn.disabled = false; // try force enabling (may or may not work)
+      		}
+      		attachSelectedBtn.click();
+
+			// Step 4: Close the modal and restore UI
+			//const closeButton = modalOverlay.querySelector('.v--modal-box.v--modal .modal__closeButton');
+			//if (closeButton) {
+			//  	closeButton.click();
+			//}
+
+			// Restore modal overlay interactivity and visibility so no UI remains blocked
+			revert_modal_visibility();
+		}, 100);
+	
+	},100);
+
+}
+
+//Revised version: //testing around 
+
+//helper-functions, that might be useful for other such endeavors: 
+
+
+//hide modal visibilty and event blocking
+const hide_modal_visibiltiy = function(allModals){
+	if (allModals.length > 0) {
+    	allModals.forEach(modal => {
+    	  	modal.style.opacity = '0';
+    	  	modal.style.pointerEvents = 'none';
+    	  	const keyboardBlocker = function(e) {
+    	  	  	e.preventDefault();
+    	  	  	e.stopPropagation();
+    	  	};
+    	  	modal.addEventListener('keydown', keyboardBlocker, true);
+    	  	modal._keyboardBlocker = keyboardBlocker;
+    	});
+  }	
+}
+//Helper Function takes an array of modals that have been hidden and reverts their visibility back to "see-able"
+const revert_modal_visibility = function(allModals) {
+    allModals.forEach(modal => {
+      modal.style.opacity = '';
+      modal.style.pointerEvents = '';
+      if (modal._keyboardBlocker) {
+        modal.removeEventListener('keydown', modal._keyboardBlocker, true);
+        delete modal._keyboardBlocker;
+      }
+    });
+  };
+
+const NON_MUT_OBSERVER_request_revision_ATTACH_FILES = function() {
+  const exactPText = "Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.";
+  const requiredH2Text = "Notify Authors";
+
+  const $allPanelSections = $('div.panelSection__content');
+  if ($allPanelSections.length === 0) return;
+
+  const $targetDiv = $allPanelSections.filter(function() {
+    const $this = $(this);
+    const h2Text = $this.find('h2').text().trim();
+    const pText = $this.find('p').text().trim();
+    return h2Text === requiredH2Text && pText === exactPText;
+  });
+  if (!$targetDiv.length) return;
+
+  const attachFilesBtn = document.querySelector('.tox-tbtn--select');
+  if (!attachFilesBtn) {
+    console.warn('Attach Files button not found.');
+	alert('Attach Files button not found.');
+    return;
+  }
+
+  // Hide modals and block keys (if any exist right now)
+  const allModals = document.querySelectorAll(".modal");
+  hide_modal_visibiltiy(allModals); 
+
+  // Start by clicking the "Attach Files" button to open modal
+  attachFilesBtn.click();
+
+  // Observe for modal overlay appearance
+  const bodyObserver = new MutationObserver((mutations, observer) => {
+    const modalOverlay = document.querySelector('.v--modal-overlay.scrollable');
+    if (!modalOverlay) {
+		//i think no need to make modals visible again yet
+		return; // wait for next mutation
+	}
+    // Modal overlay found, stop observing body
+	alert("Modal Overlay fouind (1) "); //getting past here - Yaaay! 
+    observer.disconnect();
+
+	//shouldnt be necessary, as parent is not visible already. 
+    // Immediately hide modal & disable interaction (again, in case newly created)
+    //modalOverlay.style.opacity = '0';
+    //modalOverlay.style.pointerEvents = 'none';
+
+    // Find "Attach Review Files" button inside modal
+	//THIS STILL NEEDS A MUTATION OBSERVER!!!
+    const attachReviewFilesBtn = modalOverlay.querySelector('.fileAttacher #attacher1 button.pkpButton');
+    if (!attachReviewFilesBtn) {
+      console.warn('Attach Review Files button not found.');
+	  alert('Attach Review Files button not found.');
+      revert_modal_visibility(allModals);
+      return;
+    }
+    attachReviewFilesBtn.click();
+
+    // Now observe modal box for the review files list to appear
+    const modalBox = modalOverlay.querySelector('.v--modal-box.v--modal');
+    if (!modalBox) {
+      console.warn('Modal box not found.');
+      revert_modal_visibility(allModals);
+      return;
+    }
+    const modalBoxObserver = new MutationObserver((mutations2, observer2) => {
+      // Check if the review files checkbox list is present
+      const checkboxes = modalBox.querySelectorAll('.fileAttacherReviewFiles input[type="checkbox"]');
+      if (checkboxes.length === 0) return; // wait for next mutation
+
+      // Found checkboxes, stop observing
+      observer2.disconnect();
+
+      // Select all checkboxes by clicking them to trigger UI events
+      checkboxes.forEach(chk => {
+        if (!chk.checked) {
+          chk.click();
+          chk.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+
+      // Find "Attach Selected" button (enabled or disabled)
+      let attachSelectedBtn = modalBox.querySelector('.fileAttacherReviewFiles .buttonRow button.pkpButton:not([disabled])')
+        || modalBox.querySelector('.fileAttacherReviewFiles .buttonRow button.pkpButton');
+
+      if (!attachSelectedBtn) {
+        console.warn('Attach Selected button not found.');
+        revert_modal_visibility(allModals);
+        return;
+      }
+
+      // Try to enable if disabled (may not have effect)
+      if (attachSelectedBtn.disabled) {
+        attachSelectedBtn.disabled = false;
+      }
+
+      attachSelectedBtn.click();
+
+      // Close modal
+      const closeButton = modalOverlay.querySelector('.v--modal-box.v--modal .modal__closeButton');
+      if (closeButton) closeButton.click();
+
+      // Restore modal visibility and event blocking removal
+      revert_modal_visibility(allModals);
+    });
+
+    // Start observing modal box for child changes (submenu UI loading)
+    modalBoxObserver.observe(modalBox, { childList: true, subtree: true });
+
+  });
+
+  // Start observing the body for modal overlay insertion
+  bodyObserver.observe(document.body, { childList: true, subtree: true });
+};
+
+
+
+
+
+
+
+
 // -------------------------------------------------------------------
 //beginning of modified version above. 
 // Modify the form when an editor clicks "Request revision".
@@ -529,7 +832,7 @@ $(document).ready(function() {
 				//func_start_new_review_round(node);
 				//func_forms_skipEmail_and_skipDiscussion(node);
 				func_decision_revision_attachments(node);
-				func_decision_option_and_include_review(node);
+				func_decision_option_and_include_review(node); //could be disabled, Patch available in php (Andy)
 				func_send_issue_notification(node);
 				func_add_reviewer_regularReviewerForm(node);
 				func_review_round1(node);
@@ -568,6 +871,8 @@ $(document).ready(function() {
 // to be run once when the document is loaded. Not whenever a node is added. 
 
 	NON_MUT_OBSERVER_start_new_review_round(); 
+	//might be better to do in php...
+	NON_MUT_OBSERVER_request_revision_ATTACH_FILES(); 
 
 //-----------------------------------------------------------------
 
