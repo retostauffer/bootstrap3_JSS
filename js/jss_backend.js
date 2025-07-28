@@ -340,155 +340,8 @@ const func_decision_option_and_include_review = function(x) {
 // below the "Notify Authors" 
 //that is removed after action has been completed (fadeOut())
 //this version is not quite working, revised version below. 
-const NON_MUT_OBSERVER_request_revision_ATTACH_FILES_version1 = function(x) {
-	const exactPText = "Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.";
-	const requiredH2Text = "Notify Authors";
-
-	// New: Initial check for the existence of any div.panelSection__content
-	const $allPanelSections = $('div.panelSection__content');
-	if ($allPanelSections.length === 0) {
-	  // console.log("No div.panelSection__content elements found. Exiting.");
-	  return; // Exit the function early if no base elements are present
-	}	
-
-	// Proceed with the more specific filtering only if base elements exist
-	const $targetDiv = $allPanelSections.filter(function() {
-		const $this = $(this);
-		const h2Text = $this.find('h2').text().trim();
-		const pText = $this.find('p').text().trim();	
-		return h2Text === requiredH2Text && pText === exactPText;
-	});	
-	// Check if the specific target div was found after filtering
-	if (!$targetDiv.length) {
-    // Target section/page not found
-    	return;
-  	}
-
-	//might need a mutObserver to check for appearance of button to click here. 
-	// Step 1: Click "Attach Files" button to open modal
-	const attachFilesBtn = document.querySelector('.tox-tbtn--select'); 
-  	if (!attachFilesBtn) {
-  	  	console.warn('Attach Files button not found.');
-  	  	return;
-  	}
-
-	//making all modal classes invisible for the time being. 
-	//THIS NEEDS TO BE REVERTED AT THE END OF THE FUNCTION! 
-	const allModals = document.querySelectorAll(".modal"); 
-	if (allModals.length > 0) {
-  		allModals.forEach(modal => {
-    		// Hide modal and disable mouse/touch interactions
-    		modal.style.opacity = '0';
-    		modal.style.pointerEvents = 'none';
-
-    		// Add keydown listener to block all keyboard events inside this modal
-    		const keyboardBlocker = function(e) {
-    		  e.preventDefault();
-    		  e.stopPropagation();
-    		};
-
-    		modal.addEventListener('keydown', keyboardBlocker, true);
-
-    		// Save the listener function on the modal element so you can remove it later to revert
-    		modal._keyboardBlocker = keyboardBlocker;
-  		});
-	}
-	 
-	// Later, to revert everything (restore visibility, mouse events and keyboard handling):
-	const revert_modal_visibility = function(){
-		allModals.forEach(modal => {
-	  		modal.style.opacity = '';
-	  	  	modal.style.pointerEvents = '';
-	  	  	if (modal._keyboardBlocker) {
-	  	  	  	modal.removeEventListener('keydown', modal._keyboardBlocker, true);
-	  	  	  	delete modal._keyboardBlocker;
-	  	  	}
-	  	});
-	}
-
-
-  	attachFilesBtn.click();
-
-	// Step 2: Wait for modal to render and then automate inside modal
-  	// Use a MutationObserver or setTimeout—here we use setTimeout for simplicity
-  	setTimeout(() => {
-    	// Select the modal overlay that contains the modal content
-    	const modalOverlay = document.querySelector('.v--modal-overlay.scrollable');
-    	//TODO: might need mutObserver here, so it doesnt just give up. 
-		if (!modalOverlay) {
-    		console.warn('Modal overlay not found.');
-			revert_modal_visibility();
-    		return;
-    	}
-		// Inside modal, find and click "Attach Review Files" button
-    	const attachReviewFilesBtn = modalOverlay.querySelector('.fileAttacher #attacher1 button.pkpButton');
-    	if (!attachReviewFilesBtn) {
-    	  	console.warn('Attach Review Files button not found.');
-    	  	// Restore modal interactivity before exit
-    	  	revert_modal_visibility();
-    	  	return;
-    	}
-
-    	attachReviewFilesBtn.click();
-
-		// Step 3: Wait for "Review Files" list to load, then select all checkboxes and attach
-    	setTimeout(() => {
-    	  	// Select modalBox for review files UI
-    	  	const modalBox = modalOverlay.querySelector('.v--modal-box.v--modal');
-    	  	if (!modalBox) {
-    	  	  console.warn('Modal box not found after clicking Attach Review Files.');
-    	  	  revert_modal_visibility();
-    	  	  return;
-    	  	}
-		  
-    	  	// Select all checkboxes for review files
-    	  	const checkboxes = modalBox.querySelectorAll('.fileAttacherReviewFiles input[type="checkbox"]');
-    	  	if (checkboxes.length === 0) {
-    	  	  	console.warn('No review file checkboxes found.');
-				revert_modal_visibility();
-    	  	  	return;
-    	  	}
-		  
-    	  	checkboxes.forEach(chk => {
-    	  	  	if (!chk.checked) chk.click();  // check the box (use click to trigger events if needed)
-			});
-		
-
-			// After checking boxes, find the Attach Selected button
-    		const attachSelectedBtn = modalBox.querySelector('.fileAttacherReviewFiles .buttonRow button.pkpButton:not([disabled])')
-    		  	|| modalBox.querySelector('.fileAttacherReviewFiles .buttonRow button.pkpButton'); // fallback
-    		if (!attachSelectedBtn) {
-    		  	console.warn('Attach Selected button not found.');
-    		  	// restore modal UI
-    		  	revert_modal_visibility();
-    		  	return;
-    		}
-			// Enable and click the Attach Selected button only if disabled (UNSURE IF NEEDED)
-      		if (attachSelectedBtn.disabled) {
-      		  	// There is no direct way to enable button if controlled by framework, so alternatively:
-      		  	// dispatch input/change events on inputs again, or try clicking anyway:
-      		  	attachSelectedBtn.disabled = false; // try force enabling (may or may not work)
-      		}
-      		attachSelectedBtn.click();
-
-			// Step 4: Close the modal and restore UI
-			//const closeButton = modalOverlay.querySelector('.v--modal-box.v--modal .modal__closeButton');
-			//if (closeButton) {
-			//  	closeButton.click();
-			//}
-
-			// Restore modal overlay interactivity and visibility so no UI remains blocked
-			revert_modal_visibility();
-		}, 100);
-	
-	},100);
-
-}
-
-//Revised version: //testing around 
 
 //helper-functions, that might be useful for other such endeavors: 
-
 
 //hide modal visibilty and event blocking
 const hide_modal_visibiltiy = function(allModals){
@@ -516,118 +369,176 @@ const revert_modal_visibility = function(allModals) {
       }
     });
   };
+  
 
 const NON_MUT_OBSERVER_request_revision_ATTACH_FILES = function() {
-  const exactPText = "Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.";
-  const requiredH2Text = "Notify Authors";
+  	const exactPText = "Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.";
+  	const requiredH2Text = "Notify Authors";
 
-  const $allPanelSections = $('div.panelSection__content');
-  if ($allPanelSections.length === 0) return;
+  	const $allPanelSections = $('div.panelSection__content');
+  	if ($allPanelSections.length === 0) return;
 
-  const $targetDiv = $allPanelSections.filter(function() {
-    const $this = $(this);
-    const h2Text = $this.find('h2').text().trim();
-    const pText = $this.find('p').text().trim();
-    return h2Text === requiredH2Text && pText === exactPText;
-  });
-  if (!$targetDiv.length) return;
+  	const $targetDiv = $allPanelSections.filter(function() {
+  	  	const $this = $(this);
+  	  	const h2Text = $this.find('h2').text().trim();
+  	  	const pText = $this.find('p').text().trim();
+  	  	return h2Text === requiredH2Text && pText === exactPText;
+  	});
+  	if (!$targetDiv.length) return;
 
-  const attachFilesBtn = document.querySelector('.tox-tbtn--select');
-  if (!attachFilesBtn) {
-    console.warn('Attach Files button not found.');
-	alert('Attach Files button not found.');
-    return;
-  }
+	
 
-  // Hide modals and block keys (if any exist right now)
-  const allModals = document.querySelectorAll(".modal");
-  hide_modal_visibiltiy(allModals); 
 
-  // Start by clicking the "Attach Files" button to open modal
-  attachFilesBtn.click();
+	//Find the "Attach Files Button"
+  	const attachFilesBtn = document.querySelector('.tox-tbtn--select');
+  	if (!attachFilesBtn) {
+  	  	console.warn('Attach Files button not found.');
+		alert('Attach Files button not found.');	//only testing
+  	  	return;
+  	}
 
-  // Observe for modal overlay appearance
-  const bodyObserver = new MutationObserver((mutations, observer) => {
-    const modalOverlay = document.querySelector('.v--modal-overlay.scrollable');
-    if (!modalOverlay) {
-		//i think no need to make modals visible again yet
-		return; // wait for next mutation
-	}
-    // Modal overlay found, stop observing body
-	alert("Modal Overlay fouind (1) "); //getting past here - Yaaay! 
-    observer.disconnect();
+  	// Hide modals and block keys (if any exist right now)
+  	const allModals = document.querySelectorAll(".modal");
+  	hide_modal_visibiltiy(allModals); 
 
-	//shouldnt be necessary, as parent is not visible already. 
-    // Immediately hide modal & disable interaction (again, in case newly created)
-    //modalOverlay.style.opacity = '0';
-    //modalOverlay.style.pointerEvents = 'none';
+  	// Start by clicking the "Attach Files" button to open modal
+  	attachFilesBtn.click();
 
-    // Find "Attach Review Files" button inside modal
-	//THIS STILL NEEDS A MUTATION OBSERVER!!!
-    const attachReviewFilesBtn = modalOverlay.querySelector('.fileAttacher #attacher1 button.pkpButton');
-    if (!attachReviewFilesBtn) {
-      console.warn('Attach Review Files button not found.');
-	  alert('Attach Review Files button not found.');
-      revert_modal_visibility(allModals);
-      return;
-    }
-    attachReviewFilesBtn.click();
+  	// Observe for modal overlay appearance
+  	const bodyObserver = new MutationObserver((mutations, observer) => {
+    	const modalOverlay = document.querySelector('.v--modal-overlay.scrollable');
+    	if (!modalOverlay) {
+			//Checks if the modalOverlay has been detected, otherwise returns and waits for next mutation to check again. 
+			//i think no need to make modals visible again yet
+			return; // wait for next mutation
+		}
+		hide_modal_visibiltiy([modalOverlay]); //necessary, as the modal class / its style is somehow changed when entering here. 
 
-    // Now observe modal box for the review files list to appear
-    const modalBox = modalOverlay.querySelector('.v--modal-box.v--modal');
-    if (!modalBox) {
-      console.warn('Modal box not found.');
-      revert_modal_visibility(allModals);
-      return;
-    }
-    const modalBoxObserver = new MutationObserver((mutations2, observer2) => {
-      // Check if the review files checkbox list is present
-      const checkboxes = modalBox.querySelectorAll('.fileAttacherReviewFiles input[type="checkbox"]');
-      if (checkboxes.length === 0) return; // wait for next mutation
+    	// Modal overlay found, stop observing document.body
+    	observer.disconnect();
 
-      // Found checkboxes, stop observing
-      observer2.disconnect();
+		
+    	// Find "Attach Review Files" button inside modal
+		//THIS STILL NEEDS A MUTATION OBSERVER!!!
+		const attachReviewFilesObserver = new MutationObserver((mutations2, observer2) => {
 
-      // Select all checkboxes by clicking them to trigger UI events
-      checkboxes.forEach(chk => {
-        if (!chk.checked) {
-          chk.click();
-          chk.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      });
+    		const attachReviewFilesBtn = modalOverlay.querySelector('.fileAttacher #attacher1 button.pkpButton');
+    	
+			if (!attachReviewFilesBtn) {	//not yet there. wait on next mutation. 
+    		  	console.warn('Attach Review Files button not found.');
+    		  	return;
+    		}
 
-      // Find "Attach Selected" button (enabled or disabled)
-      let attachSelectedBtn = modalBox.querySelector('.fileAttacherReviewFiles .buttonRow button.pkpButton:not([disabled])')
-        || modalBox.querySelector('.fileAttacherReviewFiles .buttonRow button.pkpButton');
+			//alert('Attach Review Files button found!'); //testing only
 
-      if (!attachSelectedBtn) {
-        console.warn('Attach Selected button not found.');
-        revert_modal_visibility(allModals);
-        return;
-      }
+      		observer2.disconnect();
 
-      // Try to enable if disabled (may not have effect)
-      if (attachSelectedBtn.disabled) {
-        attachSelectedBtn.disabled = false;
-      }
+    		attachReviewFilesBtn.click();
+			//----------------------------------------------------------------------------------------------------------------
 
-      attachSelectedBtn.click();
+    		const checkboxListObserver = new MutationObserver((mutations3, observer3) => {
+				//This might create problems when there ARE NO REVIEWS TO BE ATTACHED! 
+				//const allCheckboxes = modalOverlay.querySelectorAll('.fileAttacherReviewFiles input[type="checkbox"]');
+				const allCheckboxes = modalOverlay.querySelectorAll('.v--modal-box.v--modal .fileAttacherReviewFiles input[type="checkbox"]');
+        		if (allCheckboxes.length === 0) {
+					let noFiles = modalOverlay.querySelector('.fileAttacherReviewFiles__noFiles');
+					if(noFiles){
+						//TODO: we need to close out of the modal / all modals. 
+						//the closing by "esc" is not yet working.
+						const escEvent = new KeyboardEvent('keydown', {
+						  	bubbles: true,
+						  	cancelable: true,
+						  	key: 'Escape',
+						  	code: 'Escape',
+						  	keyCode: 27,   // deprecated but sometimes still needed
+						  	which: 27      // deprecated but sometimes still needed
+						});
+						document.dispatchEvent(escEvent);
 
-      // Close modal
-      const closeButton = modalOverlay.querySelector('.v--modal-box.v--modal .modal__closeButton');
-      if (closeButton) closeButton.click();
+						//and we need to reset the modal visibility with 
+						revert_modal_visibility(allModals);
+						revert_modal_visibility([modalOverlay]);
+						//and we need to exit out of the function, so the javascript can keep running/end. 
+						observer3.disconnect();
+						console.log("No reviewer-files to be attached."); 
+						return; //TODO: check if that works ok
 
-      // Restore modal visibility and event blocking removal
-      revert_modal_visibility(allModals);
-    });
+					}
+					
+					return; // Wait until at least one checkbox appears
+				}
+				//alert("Found allCheckboxes");
+				observer3.disconnect();
 
-    // Start observing modal box for child changes (submenu UI loading)
-    modalBoxObserver.observe(modalBox, { childList: true, subtree: true });
+    			// Select all checkboxes by clicking them to trigger UI events
+    		  	allCheckboxes.forEach(chk => {
+    		  	  if (!chk.checked) {
+    		  	    chk.click();
+    		  	    chk.dispatchEvent(new Event('change', { bubbles: true }));
+					//alert("checked a checkbox");
+    		  	  }
+    		  	});
 
-  });
+				//console.log("All checkboxes checked"); //getting to here
 
-  // Start observing the body for modal overlay insertion
-  bodyObserver.observe(document.body, { childList: true, subtree: true });
+
+				// Step 4: Wait for "Attach Selected" button to be present and enabled before clicking
+				const footer = modalOverlay.querySelector('.fileAttacher__footer');
+				if (!footer) {
+  					console.log('fileAttacher__footer container not found.');
+  					// revert_modal_visibility(allModals);
+  					return;
+				}
+				//if(footer) console.log("footer found"); //getting past here. 
+
+				const attachSelectedObserver = new MutationObserver((mutations4, observer4) => {
+					// Try to find enabled "Attach Selected" button first
+					//let attachSelectedBtn = modalOverlay.querySelector('.fileAttacherReviewFiles .buttonRow button.pkpButton:not([disabled])');
+					// const attachSelectedBtn = modalOverlay.querySelector('.fileAttacher__footer > button.pkpButton');
+					const buttons = footer.querySelectorAll('button.pkpButton');
+					if(buttons.length > 0 ) console.log("some buttons found");
+  					const attachSelectedBtn = Array.from(buttons).find(btn => btn.textContent.trim() === 'Attach Selected');
+				
+				
+					if (!attachSelectedBtn) {
+						// Button not in DOM yet, keep waiting
+						return;
+					}
+					if (attachSelectedBtn.disabled) {
+						// Wait until enabled before clicking
+						return;
+					}
+					console.log("Found AttachSelectedBtn");
+					// alert("Found attachSelectedBtn");
+					
+					// Button present and enabled -> disconnect observer and click
+					observer4.disconnect();
+				
+					attachSelectedBtn.click();
+					// alternatively:
+					//attachSelectedBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+				
+					// Close modal programmatically
+					//const closeButton = modalOverlay.querySelector('.v--modal-box.v--modal .modal__closeButton');
+					//if (closeButton) closeButton.click();
+				
+					// Restore modal visibility and unblock keyboard
+					revert_modal_visibility(allModals);
+				});
+				//TODO: PROBLEM WHEN THERE ARE NO REVIEWS TO BE ATTACHED? 
+				//could the problem be the not idealy used modalOverlay here? 
+				//might there be a better DOM element to watch?
+				attachSelectedObserver.observe(modalOverlay, { childList: true, subtree: true, attributes: true});
+    		});
+    		checkboxListObserver.observe(modalOverlay, { childList: true, subtree: true, attributes: true});
+
+  		});
+		attachReviewFilesObserver.observe(modalOverlay, { childList: true, subtree: true });
+  	});
+  	// Start observing the body for modal overlay insertion
+  	bodyObserver.observe(document.body, { childList: true, subtree: true });
+	//debugger; //here the modal class is somehow changed, the style is "removed"?? possibly the changing
+	//this should now be solved, with an additional hide_modal_visibility() on modalOverlay. 
 };
 
 
