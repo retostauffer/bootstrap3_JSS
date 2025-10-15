@@ -339,7 +339,7 @@ const func_decision_option_and_include_review = function(x) {
 //TODO: needs "beatiful pink" warning: "Please wait, while reviews are being attached"
 // below the "Notify Authors" 
 //that is removed after action has been completed (fadeOut())
-//this version is not quite working, revised version below. 
+//this version is not quite working, revised version below. -> why?? 
 
 //helper-functions, that might be useful for other such endeavors: 
 
@@ -370,8 +370,20 @@ const revert_modal_visibility = function(allModals) {
     });
   };
   
-
+//Why is this a NON_MUT_OBSERVER? -> give reason below. 
+//Reason for this function not being started by a mutation observer:
+//Mutation observer is triggered, whenever a change on a page THAT HAS FINISHED LOADING occurs. 
+//As the data we are looking for is present on the newly loaded page -> mutation observer is not triggered. 
+// Therefore we need to use a different way to observe this 
+// - here by checking for a certain text in the document, once when it is loaded.
+//TODO: better alternative to this: possibly JS Promises + async/await. 
+//currently reading up on this. 
+//possible solution see: https://g.co/gemini/share/8099f3fd3899
 const NON_MUT_OBSERVER_request_revision_ATTACH_FILES = function() {
+
+	//This part checks if the document we are lookin for has been loaded. 
+	// By comparison of text. 
+	// Exits function if the text is NOT found.
   	const exactPText = "Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.";
   	const requiredH2Text = "Notify Authors";
 
@@ -385,15 +397,72 @@ const NON_MUT_OBSERVER_request_revision_ATTACH_FILES = function() {
   	  	return h2Text === requiredH2Text && pText === exactPText;
   	});
   	if (!$targetDiv.length) return;
-
+	//Below this: We are in the document we are looking for.
 	
+	//Insert jss_important notice here.
+	var $notifyAuthorContent = $('div.panelSection__content').filter(function() {
+  		// Check if h2 text matches
+  		var hasNotifyTitle = $(this).find('h2').first().text().trim() === 'Notify Authors';
+  		// Check if this div's closest ancestor with classes panelSection and decision__stepHeader exists
+  		var hasCorrectParent = $(this).closest('div.panelSection.decision__stepHeader').length > 0;
+  	return hasNotifyTitle && hasCorrectParent;
+	});
 
+	$notifyAuthorContent.append(`
+			  <div class="pkp_notification jss_notification jss_requestRevisions" style="padding-top:1em;">
+			    <div class="notifyInfo_header jss_notification jss_requestRevisions" style="margin-bottom: 0;">
+			      <strong>Important:</strong><br/>
+				  	<div class="notifyInfoContent_trying">
+				  		Trying to automatically attach review files ...
+					</div>
+			    </div>
+			  </div>
+			`);
+	var $notifyInfo_header = $notifyAuthorContent.find('.pkp_notification .notifyInfo_header.jss_notification.jss_requestRevisions');
+	
+	
+	//Adding next mut-observer:
+	const tinyMceObserver = new MutationObserver((tinyMceMutationList, tinyObserver) => {
+		const buttonSelector = document.querySelector('button.tox-tbtn.tox-tbtn--select');
+
+		const selector = 'button.tox-tbtn.tox-tbtn--select';
+
+		
+		tinyMceMutationList.forEach(({addedNodes}) => {
+			addedNodes.forEach(node => {
+				console.log("asdfasdf");
+				console.log(node);
+				const foundButton = node.find(selector);
+				if(foundButton.length == 0){
+					//TODO
+					//this does not work -> change to call rest of function in separate function if length >0
+					// check why MUTATION OBSERVER at bottom is NOT working for this????
+					return;};
+			});
+		});
+		
+		//if(!buttonSelector){
+		//	//Checks if the modalOverlay has been detected, otherwise returns and waits for next mutation to check again. 
+		//	return; // wait for next mutation
+		//}
+		//console.log("xxxx");
+		//console.log(tinyMceMutationList);
+		alert("woohoo");
+		tinyObserver.disconnect();
+		console.log("WOOHOO");
 
 	//Find the "Attach Files Button"
   	const attachFilesBtn = document.querySelector('.tox-tbtn--select');
   	if (!attachFilesBtn) {
-  	  	console.warn('Attach Files button not found.');
-		alert('Attach Files button not found.');	//only testing
+  	  	console.warn('Attach Files button not found. Assuming no review files available');
+		//alert('Attach Files button not found.');	//only testing
+		//TODO: add: into jss_warning-> "No files have been added"
+		$notifyInfo_header.find('.notifyInfoContent_trying').
+		html(`
+				Failed to automatically attach review files.<br/>
+				Please make sure to manually attach the required review files, by using the <strong>Attach Files</strong> button
+				above the message field.
+			`);
   	  	return;
   	}
 
@@ -419,7 +488,7 @@ const NON_MUT_OBSERVER_request_revision_ATTACH_FILES = function() {
 
 		
     	// Find "Attach Review Files" button inside modal
-		//THIS STILL NEEDS A MUTATION OBSERVER!!!
+		//THIS STILL NEEDS A MUTATION OBSERVER!!! -> check if done????
 		const attachReviewFilesObserver = new MutationObserver((mutations2, observer2) => {
 
     		const attachReviewFilesBtn = modalOverlay.querySelector('.fileAttacher #attacher1 button.pkpButton');
@@ -443,6 +512,7 @@ const NON_MUT_OBSERVER_request_revision_ATTACH_FILES = function() {
         		if (allCheckboxes.length === 0) {
 					let noFiles = modalOverlay.querySelector('.fileAttacherReviewFiles__noFiles');
 					if(noFiles){
+						//alert('no review files available to attach.');
 						//TODO: we need to close out of the modal / all modals. 
 						//the closing by "esc" is not yet working.
 						const escEvent = new KeyboardEvent('keydown', {
@@ -454,6 +524,19 @@ const NON_MUT_OBSERVER_request_revision_ATTACH_FILES = function() {
 						  	which: 27      // deprecated but sometimes still needed
 						});
 						document.dispatchEvent(escEvent);
+						
+						$('.v--modal-box.v--modal .modal__closeButton').each(function() {
+						  	$(this).click(); // Trigger the click event to close the modal
+						});
+
+						$notifyInfo_header.find('.notifyInfoContent_trying').
+						html(`
+							No review files have been attached automatically.<br/>
+							Please make sure to manually attach the required review files, by using the <strong>Attach Files</strong> button
+							above the message field.
+						`);
+
+
 
 						//and we need to reset the modal visibility with 
 						revert_modal_visibility(allModals);
@@ -539,6 +622,9 @@ const NON_MUT_OBSERVER_request_revision_ATTACH_FILES = function() {
   	bodyObserver.observe(document.body, { childList: true, subtree: true });
 	//debugger; //here the modal class is somehow changed, the style is "removed"?? possibly the changing
 	//this should now be solved, with an additional hide_modal_visibility() on modalOverlay. 
+	});
+
+	tinyMceObserver.observe(document.body, {childList: true, subtree: true});
 };
 
 
@@ -724,19 +810,46 @@ function func_andy_trying(x) {
 	}
 }
 
+//trying to get mutObserver to recognice the tinymce as being newly loaded modal. 
+function func_testing_tinymceObserver(x) {
+	// Convert the node to a jQuery object for .find
+    const $node = $(node);
+    // Check if node itself is the button, or contains the button within its subtree
+    if (
+        $node.is('button.tox-tbtn.tox-tbtn--select') || 
+        $node.find('button.tox-tbtn.tox-tbtn--select').length
+    ) {
+        console.log("FOUND tinyMCE with MUT OBSERVER");
+        alert("FOUND tinyMCE with MUT OBSERVER");
+    }
+}
+
 
 // ===================================================================
 // MutationObserver: Observes newly added elements used to manipulate
 // some of the on-the-fly added HTML elements on the backend.
 // ===================================================================
 $(document).ready(function() {
-
+	console.log("Document now ready");
+	if ($('button.tox-tbtn.tox-tbtn--select').length) {
+	    console.log("Button exists -> MCE MUST BE LOADED ? ");
+	} else {
+	    console.log("NO BUTTON YET -> MCE PROB. NOT LOADED YET ");
+	}
 	const observer = new MutationObserver((mutationsList) => {
+		console.log("MutationObserver now running.");
+		if ($('button.tox-tbtn.tox-tbtn--select').length) {
+		    console.log("Inside MutationObserver: Button exists -> MCE MUST BE LOADED ? ");
+		} else {
+		    console.log("MutationObserver: NO BUTTON YET -> MCE PROB. NOT LOADED YET ");
+		}
 		mutationsList.forEach(({addedNodes}) => {
 			addedNodes.forEach(node => {
-				//DEVEL//console.log(node);
+				//DEVEL//
+				console.log(node);
 				//func_andy_trying(node);
 				//alert("Found: " + $(this));
+				func_testing_tinymceObserver(node);
 				func_andyCat(node);
 				//func_start_discussion_wait(node);
 				func_start_discussion_wait_andy(node);
