@@ -627,9 +627,206 @@ const NON_MUT_OBSERVER_request_revision_ATTACH_FILES = function() {
 	tinyMceObserver.observe(document.body, {childList: true, subtree: true});
 };
 
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Start: Helper functions for async request revision email attachment
+
+/**
+ * Waits for a DOM element matching the given selector to appear within a parent element.
+ * Performs an immediate check first, then sets up a MutationObserver if not found.
+ * Resolves with the element or rejects after a timeout.
+ * @param {string} selector - CSS selector to match the element.
+ * @param {Element} [parent=document] - Parent element to search within.
+ * @param {number} [timeout=7000] - Timeout in milliseconds.
+ * @returns {Promise<Element>} Promise resolving to the found element.
+ */
+function waitForElement(selector, parent = document, timeout = 7000) {
+  	return new Promise((resolve, reject) => {
+  	  	// Immediate check
+  	  	const el = parent.querySelector(selector);
+  	  	if (el) return resolve(el);
+
+  	  	// Observer for future appearance
+  	  	const observer = new MutationObserver(() => {
+  	  	  	const found = parent.querySelector(selector);
+  	  	  	if (found) {
+  	  	  	  	observer.disconnect();
+  	  	  	  	resolve(found);
+  	  	  	}
+  	  	});
+  	  	observer.observe(parent, { childList: true, subtree: true });
+  	  	
+		setTimeout(
+			() => {
+  	  	  		observer.disconnect();
+  	  	  		reject(new Error('Timeout: ' + selector)); //throws as error at the 'await'
+  	  		},
+			timeout);
+  	});
+}
+
+/**
+ * Waits for a button element to become enabled (not disabled).
+ * Performs an immediate check first, then sets up a MutationObserver if disabled.
+ * Resolves with the button or rejects after a timeout.
+ * @param {HTMLButtonElement} button - The button element to monitor.
+ * @param {number} [timeout=7000] - Timeout in milliseconds.
+ * @returns {Promise<HTMLButtonElement>} Promise resolving to the enabled button.
+ */
+function waitForButtonEnabled(button, timeout = 7000) {
+	return new Promise((resolve, reject) => {
+		if (!button) return reject(new Error('Button not found'));
+		if (!button.disabled) return resolve(button);
+		
+		const observer = new MutationObserver(
+			() => {
+				if (!button.disabled) {
+					observer.disconnect();
+					resolve(button);
+				}
+			}
+		);
+		observer.observe(button, { attributes: true });
+		
+		setTimeout(
+			() => {
+				observer.disconnect();
+				reject(new Error('Timeout: button not enabled'));
+			},
+			timeout);
+	});
+}
+
+/**
+ * Hides the visibility of modal elements by setting their opacity to 0 and disabling pointer events.
+ * @param {NodeList|Array<Element>} modals - An array or NodeList of modal elements to hide.
+ */
+function hideModalVisibility(modals) {
+	if (!modals || !modals.length) return;
+
+	modals.forEach(
+		modal => {
+			modal.style.opacity = 0;
+			modal.style.pointerEvents = 'none';
+		}
+	);
+}
+
+/**
+ * Reverts the visibility of modal elements by resetting their opacity and pointer events to default.
+ * @param {NodeList|Array<Element>} modals - An array or NodeList of modal elements to revert.
+ */
+function revertModalVisibility(modals) {
+	if (!modals || !modals.length) return;
+
+	modals.forEach(
+		modal => {
+			modal.style.opacity = '';
+			modal.style.pointerEvents = '';
+		}
+	);
+}
+
+//End: Helper functions for async request revision email attachment
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//TODO: check if this actually works -> testing! 
+
+async function NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async() {
+	//Debuggin: 
+	console.log("NONMUTOBSERVER_requestrevisionATTACHFILES_async called");
+
+  	// Step 1: Validate we're on the right page
+  	const exactPText = 'Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.';
+  	const requiredH2Text = 'Notify Authors';
+  	const panelSections = Array.from(document.querySelectorAll('div.panelSectioncontent'));
+  	const targetDiv = panelSections.find(div => {
+  	  	const h2 = div.querySelector('h2');
+  	  	const p = div.querySelector('p');
+  	  	return h2 && (h2.textContent.trim() === requiredH2Text) && p && (p.textContent.trim() === exactPText);
+  	});
+  	if (!targetDiv) return; // Exit if not found
+
+  	// Step 2: Insert notification
+  	const notifyBox = document.createElement('div');
+  	notifyBox.className = 'pkpnotification jssnotification jssrequestRevisions';
+  	notifyBox.style.paddingTop = '1em';
+  	notifyBox.innerHTML = `<div class="notifyInfoheader jssnotification jssrequestRevisions" style="margin-bottom: 0"><strong>Important</strong><br><div class="notifyInfoContenttrying">Trying to automatically attach review files ...</div></div>`;
+  	targetDiv.appendChild(notifyBox);
+
+	
+	try {
+		// Step 3: Wait for TinyMCE button to appear -> find attachBtn
+    	const attachBtn = await waitForElement('button.tox-tbtn.tox-tbtn--select', document.body);
+    	if (!attachBtn) throw new Error('Attach Files button not found');
+
+		// Step 4: Hide all modals before clicking
+		const allModals = document.querySelectorAll('.modal');
+		hideModalVisibility(allModals);
+		attachBtn.click();
+
+		// Step 5: Wait for modal overlay to appear
+		const modalOverlay = await waitForElement('.v--modal-overlay.scrollable', document.body);
+		hideModalVisibility([modalOverlay]);
+
+		// Step 6: Find Attach Review Files button inside modal
+		const reviewFilesBtn = await waitForElement('.fileAttacher .attacher1 button.pkpButton', modalOverlay);
+		reviewFilesBtn.click();
+
+		// Step 7: Wait for the fileAttacherReviewFiles container to appear
+		const reviewFilesContainer = await waitForElement('.fileAttacherReviewFiles', modalOverlay);
+		if (!reviewFilesContainer) throw new Error('Review files container not found');
+
+		// Check for the 'No items found' message
+		const noFilesMsg = reviewFilesContainer.querySelector('.fileAttacherReviewFiles__noFiles');
+		if (noFilesMsg) {
+			notifyBox.querySelector('.notifyInfoContenttrying').innerHTML =
+				'No review files found.<br>Please attach them manually.';
+			revertModalVisibility(allModals);
+			return;
+		}
+		
+		// Otherwise, find checkboxes and proceed
+		let checkboxes = Array.from(reviewFilesContainer.querySelectorAll('input[type="checkbox"]'));
+		if (checkboxes.length === 0) {
+			notifyBox.querySelector('.notifyInfoContenttrying').innerHTML =
+				'No review files available to attach.<br>Please check manually.';
+			revertModalVisibility(allModals);
+			return;
+		}
+		
+		// Step 8: Check all checkboxes
+		checkboxes.forEach(
+			cb => {
+				if (!cb.checked) {
+					cb.click();
+					cb.dispatchEvent(new Event('change', {bubbles:true}));
+				}
+			}
+		);
+
+		// Step 9: Wait for enabled Attach Selected button then click
+		const footer = await waitForElement('.fileAttacher__footer', modalOverlay);
+		let btns = footer.querySelectorAll('button.pkpButton');
+		let attachSelectedBtn = Array.from(btns).find(b => b.textContent.trim().includes('Attach Selected'));
+		if (!attachSelectedBtn) throw new Error('No Attach Selected button found');
+		await waitForButtonEnabled(attachSelectedBtn);
+		attachSelectedBtn.click();
+
+		// Step 11: Restore all modals and update message
+		revertModalVisibility(allModals);
+		notifyBox.querySelector('.notifyInfoContenttrying').innerHTML = 'Review files have been attached automatically.';
 
 
+	} catch (err) {
+		// Error handling and clean-up
+		notifyBox.querySelector('.notifyInfoContenttrying').innerHTML =
+			'No review files have been attached automatically.<br>Please make sure to manually attach the required review files.';
+		revertModalVisibility(document.querySelectorAll('.modal'));
+		console.warn('Failed request revision attach files:', err);
+	}
 
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -849,7 +1046,7 @@ $(document).ready(function() {
 				console.log(node);
 				//func_andy_trying(node);
 				//alert("Found: " + $(this));
-				func_testing_tinymceObserver(node);
+				//func_testing_tinymceObserver(node);
 				func_andyCat(node);
 				//func_start_discussion_wait(node);
 				func_start_discussion_wait_andy(node);
@@ -896,7 +1093,10 @@ $(document).ready(function() {
 
 	NON_MUT_OBSERVER_start_new_review_round(); 
 	//might be better to do in php...
-	NON_MUT_OBSERVER_request_revision_ATTACH_FILES(); 
+	//NON_MUT_OBSERVER_request_revision_ATTACH_FILES(); 
+
+	NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async();
+	
 
 //-----------------------------------------------------------------
 
