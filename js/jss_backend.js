@@ -726,6 +726,33 @@ function revertModalVisibility(modals) {
 	);
 }
 
+//Debugging: Testing if a call with MutationObserver works: 
+function funcRequestRevisionAttachFilesAsync(node) {
+	console.log("Running funcRequestRevisionAttachFilesAsync");
+	// CRITICAL: Only process Element nodes, not text or comment nodes
+  	if (node.nodeType !== 1) return;  // nodeType 1 = ELEMENT_NODE
+
+	// Step 1: Validate we're on the right page
+  	const exactPText = 'Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.';
+  	const requiredH2Text = 'Notify Authors';
+  	const panelSections = Array.from(document.querySelectorAll('div.panelSectioncontent'));
+  	const targetDiv = panelSections.find(div => {
+  	  	const h2 = div.querySelector('h2');
+  	  	const p = div.querySelector('p');
+  	  	return h2 && (h2.textContent.trim() === requiredH2Text) && p && (p.textContent.trim() === exactPText);
+  	});
+
+
+  	// Only run if this specific node matches
+  	if (targetDiv) {
+  	  console.log('Found Request Revision section, starting async attach files process');
+  	  NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async();
+  	}
+}
+
+
+
+
 //End: Helper functions for async request revision email attachment
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //TODO: check if this actually works -> testing! 
@@ -733,6 +760,7 @@ function revertModalVisibility(modals) {
 async function NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async() {
 	//Debuggin: 
 	console.log("NONMUTOBSERVER_requestrevisionATTACHFILES_async called");
+	
 
   	// Step 1: Validate we're on the right page
   	const exactPText = 'Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.';
@@ -743,6 +771,11 @@ async function NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async() {
   	  	const p = div.querySelector('p');
   	  	return h2 && (h2.textContent.trim() === requiredH2Text) && p && (p.textContent.trim() === exactPText);
   	});
+	
+	//Debuggin: 
+	console.log('panel sections:', panelSections);
+	console.log('targetDiv:', targetDiv);
+
   	if (!targetDiv) return; // Exit if not found
 
   	// Step 2: Insert notification
@@ -1059,6 +1092,8 @@ $(document).ready(function() {
 				func_review_round1(node);
 				func_submission_submitStep3Form(node);
 				func_assign_participant_form(node);
+				//DebugTesting
+				funcRequestRevisionAttachFilesAsync(node);
 			});
 		});
 	});
