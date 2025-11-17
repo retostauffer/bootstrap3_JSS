@@ -726,29 +726,86 @@ function revertModalVisibility(modals) {
 	);
 }
 
-//Debugging: Testing if a call with MutationObserver works: 
-function funcRequestRevisionAttachFilesAsync(node) {
-	console.log("Running funcRequestRevisionAttachFilesAsync");
-	// CRITICAL: Only process Element nodes, not text or comment nodes
-  	if (node.nodeType !== 1) return;  // nodeType 1 = ELEMENT_NODE
+//new approach: try "scanning" the html-skeleton, that is delivered.
+//that should be stable, before, during and after VUE rendering of the page. 
+//currently quick and dirty testing -> NEEDS TODO cleanup and improve. 
 
-	// Step 1: Validate we're on the right page
-  	const exactPText = 'Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.';
-  	const requiredH2Text = 'Notify Authors';
-  	const panelSections = Array.from(document.querySelectorAll('div.panelSectioncontent'));
-  	const targetDiv = panelSections.find(div => {
-  	  	const h2 = div.querySelector('h2');
-  	  	const p = div.querySelector('p');
-  	  	return h2 && (h2.textContent.trim() === requiredH2Text) && p && (p.textContent.trim() === exactPText);
-  	});
-
-
-  	// Only run if this specific node matches
-  	if (targetDiv) {
-  	  console.log('Found Request Revision section, starting async attach files process');
-  	  NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async();
-  	}
+function detectCorrectPage() {
+  try {
+    const EXACT_DESCRIPTION = 'Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.';
+    
+    // Only strategy that matters
+    const bodyClassList = document.body.className;
+    if (!bodyClassList.includes('pkp_page_decision') || !bodyClassList.includes('pkp_op_record')) {
+      return { found: false, reason: 'Body classes do not match' };
+    }
+    
+    // Verify Vue app exists
+    if (!document.getElementById('app')) {
+      return { found: false, reason: 'Vue app not found' };
+    }
+    
+    // Get the registry data
+    const result = extractStepDataFromRegistry();
+    if (!result) {
+      return { found: false, reason: 'Registry data not found' };
+    }
+    
+    // Exact verification
+    if (result.name === 'Notify Authors' && result.description === EXACT_DESCRIPTION) {
+      return {
+        found: true,
+        method: 'registry_exact_match',
+        data: result,
+        confidence: 100
+      };
+    }
+    
+    return { found: false, reason: 'Step data does not match' };
+    
+  } catch (error) {
+    console.error('Page detection error:', error);
+    return { found: false, error: error.message };
+  }
 }
+
+function extractStepDataFromRegistry() {
+  try {
+    const scripts = Array.from(document.querySelectorAll('script:not([src])'));
+    
+    for (const script of scripts) {
+      const content = script.textContent;
+      
+      if (!content.includes('pkp.registry.init') || !content.includes('DecisionPage')) {
+        continue;
+      }
+      
+      const initMatch = content.match(/pkp\.registry\.init\s*\(\s*['"]app['"]\s*,\s*['"]DecisionPage['"]\s*,\s*(\{[\s\S]*?\})\s*\)\s*;/);
+      
+      if (!initMatch) continue;
+      
+      try {
+        const config = Function('"use strict"; return (' + initMatch[1] + ')')();
+        
+        if (config && config.steps && Array.isArray(config.steps)) {
+          const notifyStep = config.steps.find(step => step.name === 'Notify Authors');
+          if (notifyStep) {
+            return notifyStep;
+          }
+        }
+      } catch (parseError) {
+        console.warn('Parse error:', parseError);
+        continue;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Registry extraction error:', error);
+    return null;
+  }
+}
+
 
 
 
@@ -761,6 +818,16 @@ async function NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async() {
 	//Debuggin: 
 	console.log("NONMUTOBSERVER_requestrevisionATTACHFILES_async called");
 	
+	//current testing - quick and dirty 
+	const result = detectCorrectPage();
+		if (result.found) {
+  			console.log('Correct page detected');
+  			// Proceed
+		} else {
+			console.log('Wrong page:', result.reason);
+		}
+
+
 
   	// Step 1: Validate we're on the right page
   	const exactPText = 'Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.';
@@ -776,7 +843,10 @@ async function NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async() {
 	console.log('panel sections:', panelSections);
 	console.log('targetDiv:', targetDiv);
 
-  	if (!targetDiv) return; // Exit if not found
+  	if (!targetDiv) {
+		console.log("targetDiv not found.")
+		return; // Exit if not found
+	}
 
   	// Step 2: Insert notification
   	const notifyBox = document.createElement('div');
@@ -1092,8 +1162,6 @@ $(document).ready(function() {
 				func_review_round1(node);
 				func_submission_submitStep3Form(node);
 				func_assign_participant_form(node);
-				//DebugTesting
-				funcRequestRevisionAttachFilesAsync(node);
 			});
 		});
 	});
