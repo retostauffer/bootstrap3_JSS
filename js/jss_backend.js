@@ -816,13 +816,13 @@ function extractStepDataFromRegistry() {
 
 async function NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async() {
 	//Debuggin: 
-	console.log("NONMUTOBSERVER_requestrevisionATTACHFILES_async called");
+	console.log("NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async called");
 	
 	//current testing - quick and dirty 
 	const result = detectCorrectPage();
 		if (result.found) {
-  			console.log('Correct page detected');
-  			// Proceed
+  			console.log('Correct page detected'); //-> already getting here. 
+  			// Proceed 
 		} else {
 			console.log('Wrong page:', result.reason);
 		}
@@ -1131,18 +1131,18 @@ function func_testing_tinymceObserver(x) {
 // ===================================================================
 $(document).ready(function() {
 	console.log("Document now ready");
-	if ($('button.tox-tbtn.tox-tbtn--select').length) {
-	    console.log("Button exists -> MCE MUST BE LOADED ? ");
-	} else {
-	    console.log("NO BUTTON YET -> MCE PROB. NOT LOADED YET ");
-	}
+	//if ($('button.tox-tbtn.tox-tbtn--select').length) {
+	//    console.log("Button exists -> MCE MUST BE LOADED ? ");
+	//} else {
+	//    console.log("NO BUTTON YET -> MCE PROB. NOT LOADED YET ");
+	//}
 	const observer = new MutationObserver((mutationsList) => {
 		console.log("MutationObserver now running.");
-		if ($('button.tox-tbtn.tox-tbtn--select').length) {
-		    console.log("Inside MutationObserver: Button exists -> MCE MUST BE LOADED ? ");
-		} else {
-		    console.log("MutationObserver: NO BUTTON YET -> MCE PROB. NOT LOADED YET ");
-		}
+		//if ($('button.tox-tbtn.tox-tbtn--select').length) {
+		//    console.log("Inside MutationObserver: Button exists -> MCE MUST BE LOADED ? ");
+		//} else {
+		//    console.log("MutationObserver: NO BUTTON YET -> MCE PROB. NOT LOADED YET ");
+		//}
 		mutationsList.forEach(({addedNodes}) => {
 			addedNodes.forEach(node => {
 				//DEVEL//
