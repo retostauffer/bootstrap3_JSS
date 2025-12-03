@@ -729,12 +729,16 @@ function revertModalVisibility(modals) {
 //new approach: try "scanning" the html-skeleton, that is delivered.
 //that should be stable, before, during and after VUE rendering of the page. 
 //currently quick and dirty testing -> NEEDS TODO cleanup and improve. 
-
+//Multi-point match detection plan: 
+//we check: 
+//- "pkp_page_decion"&"pkp_op_record" in body class ?prop
+//- "Vue" app exists
+//-
 function detectCorrectPage() {
   try {
     const EXACT_DESCRIPTION = 'Send an email to the authors to let them know that revisions will be required before this submission will be accepted for publication. Include all of the details that the author will need in order to revise their submission. Where appropriate, remember to anonymise any reviewer comments. This email will not be sent until the decision is recorded.';
     
-    // Only strategy that matters
+	//checking for "pkp_page_decion"&"pkp_op_record" in class ?prop
     const bodyClassList = document.body.className;
     if (!bodyClassList.includes('pkp_page_decision') || !bodyClassList.includes('pkp_op_record')) {
       return { found: false, reason: 'Body classes do not match' };
@@ -768,37 +772,43 @@ function detectCorrectPage() {
     return { found: false, error: error.message };
   }
 }
-
+//helper for detectCorrectPage():
 function extractStepDataFromRegistry() {
   try {
+	//collection all <script> tags WITHOUT src attribute
     const scripts = Array.from(document.querySelectorAll('script:not([src])'));
     
     for (const script of scripts) {
       const content = script.textContent;
       
+	  //for each script we check if ... or ... are included -> else skipped (as irrelevant)
       if (!content.includes('pkp.registry.init') || !content.includes('DecisionPage')) {
         continue;
       }
       
+	  //regex used to find+save config obj passed to pkp.registry.init() 
       const initMatch = content.match(/pkp\.registry\.init\s*\(\s*['"]app['"]\s*,\s*['"]DecisionPage['"]\s*,\s*(\{[\s\S]*?\})\s*\)\s*;/);
       
+	  //exit loop if not found
       if (!initMatch) continue;
       
       try {
+		//converts raw text into working object-> so we can access step data
         const config = Function('"use strict"; return (' + initMatch[1] + ')')();
         
+		//searches through the workflow steps -> returns notifyStep
         if (config && config.steps && Array.isArray(config.steps)) {
-          const notifyStep = config.steps.find(step => step.name === 'Notify Authors');
-          if (notifyStep) {
-            return notifyStep;
-          }
+        	const notifyStep = config.steps.find(step => step.name === 'Notify Authors');
+        	if (notifyStep) {
+            	return notifyStep;
+          	}
         }
       } catch (parseError) {
         console.warn('Parse error:', parseError);
         continue;
       }
     }
-    
+	//if nothing found-> return null
     return null;
   } catch (error) {
     console.error('Registry extraction error:', error);
@@ -815,8 +825,8 @@ function extractStepDataFromRegistry() {
 //TODO: check if this actually works -> testing! 
 
 async function NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async() {
-	//Debuggin: 
-	console.log("NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async called");
+	//Debuggin: -> already getting here.
+	//console.log("NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async called");
 	
 	//current testing - quick and dirty 
 	const result = detectCorrectPage();
@@ -825,6 +835,7 @@ async function NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async() {
   			// Proceed 
 		} else {
 			console.log('Wrong page:', result.reason);
+			return; 
 		}
 
 
@@ -842,11 +853,14 @@ async function NON_MUT_OBSERVER_request_revision_ATTACH_FILES_async() {
 	//Debuggin: 
 	console.log('panel sections:', panelSections);
 	console.log('targetDiv:', targetDiv);
+	//this targetDiv seems to be the problem. 
+	//maybe not rendered yet-> therefore not found like this. 
+	//use the detectCorrectPage() 
 
-  	if (!targetDiv) {
-		console.log("targetDiv not found.")
-		return; // Exit if not found
-	}
+  	//if (!targetDiv) {
+	//	console.log("targetDiv not found.")
+	//	return; // Exit if not found
+	//}
 
   	// Step 2: Insert notification
   	const notifyBox = document.createElement('div');
